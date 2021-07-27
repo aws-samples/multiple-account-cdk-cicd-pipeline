@@ -1,0 +1,24 @@
+{
+  "name": "sam-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "graphql.js",
+  "scripts": {
+    "start": "nodemon",
+    "build": "tsc -p ./",
+    "start:prod": "node build/src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^3.0.2",
+    "apollo-server-lambda": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.80",
+    "@types/graphql": "^14.5.0",
+    "prettier": "^2.3.2",
+    "ts-node": "^10.1.0"
+  }
+}
