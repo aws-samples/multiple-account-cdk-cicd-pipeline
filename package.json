@@ -1,8 +1,8 @@
 {
-  "name": "awsmug-serverless-graphql-api",
+  "name": "api",
   "version": "0.1.0",
   "bin": {
-    "awsmug-serverless-graphql-api": "cdk/bin/awsmug-serverless-graphql-api.js"
+    "api": "cdk/bin/api.js"
   },
   "scripts": {
     "build": "tsc",
@@ -22,7 +22,10 @@
   },
   "dependencies": {
     "@aws-cdk/aws-apigateway": "^1.115.0",
+    "@aws-cdk/aws-ec2": "^1.115.0",
     "@aws-cdk/aws-lambda": "^1.115.0",
+    "@aws-cdk/aws-rds": "^1.115.0",
+    "@aws-cdk/aws-secretsmanager": "^1.115.0",
     "@aws-cdk/core": "1.115.0",
     "source-map-support": "^0.5.16"
   }
