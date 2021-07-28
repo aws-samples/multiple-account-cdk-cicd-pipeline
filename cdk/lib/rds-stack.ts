@@ -10,7 +10,7 @@ import { SecurityGroup, SubnetType, Vpc } from "@aws-cdk/aws-ec2";
 
 export interface RDSStackProps extends StackProps {
   vpc: Vpc;
-  securityGroup: string;
+  securityGroup: SecurityGroup;
 }
 
 export class RDSStack extends Stack {
@@ -39,7 +39,7 @@ export class RDSStack extends Stack {
           username: this.rdsDbUser,
           password: this.secret.secretValue,
         },
-        securityGroups: [{ securityGroupId: props.securityGroup }],
+        securityGroups: [props.securityGroup],
         vpcPlacement: { subnetType: SubnetType.ISOLATED },
         storageEncrypted: true,
         multiAz: false,

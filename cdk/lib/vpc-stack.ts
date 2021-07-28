@@ -36,6 +36,11 @@ export class VpcStack extends Stack {
       Port.tcp(5432)
     );
 
+    this.ingressSecurityGroup.addEgressRule(
+      Peer.ipv4("10.0.0.0/16"),
+      Port.tcp(5432)
+    );
+
     this.egressSecurityGroup = new SecurityGroup(
       this,
       "egress-security-group",

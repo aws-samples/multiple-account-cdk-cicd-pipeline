@@ -1,8 +1,7 @@
 import { Stack, StackProps, Construct } from "@aws-cdk/core";
 import { LambdaRestApi } from "@aws-cdk/aws-apigateway";
 import { Function, Runtime, Code } from "@aws-cdk/aws-lambda";
-import { SecurityGroup, SubnetType } from "@aws-cdk/aws-ec2";
-import { Vpc } from "@aws-cdk/aws-ec2";
+import { Vpc, SecurityGroup, SubnetType } from "@aws-cdk/aws-ec2";
 import { Secret } from "@aws-cdk/aws-secretsmanager";
 
 export interface LambdaStackProps extends StackProps {

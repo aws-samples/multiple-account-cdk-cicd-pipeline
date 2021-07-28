@@ -11,8 +11,7 @@ const vpcStack = new VpcStack(app, "VPCStack");
 // RDS Postgres
 const rdsStack = new RDSStack(app, "RDSStack", {
   vpc: vpcStack.vpc,
-  securityGroup:
-    vpcStack.ingressSecurityGroup.connections.securityGroups[0].securityGroupId,
+  securityGroup: vpcStack.ingressSecurityGroup,
 });
 
 // Serverless Lambda/API Gateway Graphql API
