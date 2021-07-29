@@ -1,0 +1,16 @@
+{
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "username": "awsmeetupgroup",
+  "password": "Password1!",
+  "database": "awsmeetupgroup",
+  "migrationsRun": true,
+  "entities": ["src/entity/*.entity.{ts,js}"],
+  "migrations": ["src/migration/**/*.ts"],
+  "migrationsTableName": "migration_table",
+  "cli": {
+    "migrationsDir": "src/migrations",
+    "entitiesDir": "src/entity"
+  }
+}

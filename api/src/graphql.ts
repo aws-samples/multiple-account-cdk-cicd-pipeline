@@ -3,6 +3,14 @@ import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-co
 
 import { schema } from './schema';
 import { resolvers } from './resolvers';
+import { db } from './db-connection';
+
+const createConnection = async () => {
+  const testConnection = await db();
+  console.log('TESTING CONNECTION:', testConnection);
+};
+
+createConnection();
 
 const server = new ApolloServer({
   typeDefs: schema,

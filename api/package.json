@@ -1,15 +1,22 @@
 {
-  "name": "sam-app",
+  "name": "awsmeetupgroup-api",
   "version": "1.0.0",
   "description": "",
   "main": "graphql.js",
   "scripts": {
     "start": "nodemon",
     "build": "tsc -p ./",
-    "start:prod": "node build/src/server.js"
+    "start:prod": "node build/src/server.js",
+    "db:setup": "bin/db_setup",
+    "db:migrate": "typeorm migration:run",
+    "db:migrate:generate": "typeorm migration:generate -n",
+    "db:migrate:rollback": "typeorm migration:revert",
+    "db:seed": "TYPEORM_ENTITIES=./src/entities TYPEORM_MIGRATIONS_TABLE_NAME=typeorm_seed TYPEORM_MIGRATIONS=./src/migrations/db/seeds/*.ts npm run typeorm -- migration:run",
+    "db:seed:rollback": "TYPEORM_ENTITIES=./src/entities TYPEORM_MIGRATIONS_TABLE_NAME=typeorm_seed TYPEORM_MIGRATIONS=./src/migrations/db/seeds/*.ts npm run typeorm -- migration:revert",
+    "typeorm": "ts-node node_modules/typeorm/cli.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "awsmeetupgroup",
   "license": "ISC",
   "dependencies": {
     "apollo-server": "^3.0.2",
