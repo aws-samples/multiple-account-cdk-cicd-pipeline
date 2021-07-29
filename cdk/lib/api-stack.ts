@@ -35,11 +35,11 @@ export class GraphqlApiStack extends Stack {
         props.inboundDbAccessSecurityGroup
       ),
       environment: {
-        USERNAME: props.rdsDbUser,
-        ENDPOINT: props.rdsEndpoint,
-        DATABASE: props.rdsDbName,
-        PORT: props.rdsPort.toString(),
-        PASSWORD: secret.secretValue.toString(),
+        DB_USERNAME: props.rdsDbUser,
+        DB_ENDPOINT: props.rdsEndpoint,
+        DB_NAME: props.rdsDbName,
+        DB_PORT: props.rdsPort.toString(),
+        DB_PASSWORD: secret.secretValue.toString(),
       },
     });
 

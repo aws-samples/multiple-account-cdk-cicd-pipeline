@@ -8,3 +8,4 @@ node_modules
 cdk.out
 build/
 .env
+api/node_modules

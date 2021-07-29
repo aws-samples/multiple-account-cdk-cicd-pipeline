@@ -24,3 +24,6 @@ aws cloudformation deploy --profile awsmeetupgroup \
  --capabilities CAPABILITY_IAM
 
 aws s3 mb s3://test-apollo-acl --profile awsmeetupgroup
+
+npm i -g typeorm
+npm install -g ts-node
