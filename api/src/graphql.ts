@@ -1,19 +1,18 @@
 import { ApolloServer, gql } from 'apollo-server-lambda';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 
-import { schema } from './schema';
+import { typeDefs } from './typeDefs';
 import { resolvers } from './resolvers';
 import { db } from './db-connection';
 
 const createConnection = async () => {
-  const testConnection = await db();
-  console.log('TESTING CONNECTION:', testConnection);
+  await db();
 };
 
 createConnection();
 
 const server = new ApolloServer({
-  typeDefs: schema,
+  typeDefs,
   resolvers,
   introspection: true,
   plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],

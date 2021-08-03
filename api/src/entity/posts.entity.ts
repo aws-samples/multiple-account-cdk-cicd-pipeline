@@ -1,7 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BaseEntity } from 'typeorm';
 
 @Entity()
-export class Post {
+export class Posts extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -10,7 +10,4 @@ export class Post {
 
   @Column()
   text: string;
-
-  @Column()
-  test: string;
 }
