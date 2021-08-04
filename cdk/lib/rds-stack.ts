@@ -17,8 +17,8 @@ export interface RDSStackProps extends StackProps {
 export class RDSStack extends Stack {
   readonly secret: ISecret;
   readonly postgresRDSInstance: DatabaseInstance;
-  readonly rdsDbUser: string = "serverless";
-  readonly rdsDbName: string = "awsmeetupgroup";
+  readonly rdsDbUser: string = process.env.TYPEORM_USERNAME || "serverless";
+  readonly rdsDbName: string = process.env.TYPEORM_DATABASE || "awsmeetupgroup";
   readonly rdsPort: number = 5432;
 
   constructor(scope: App, id: string, props: RDSStackProps) {
