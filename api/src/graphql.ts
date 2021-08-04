@@ -14,8 +14,18 @@ createConnection();
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  context: ({ context }) => {
+    context.callbackWaitsForEmptyEventLoop = false;
+  },
   introspection: true,
   plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
 });
 
-export const handler = server.createHandler();
+export const handler = server.createHandler({
+  expressGetMiddlewareOptions: {
+    cors: {
+      origin: '*',
+      credentials: true,
+    },
+  },
+});

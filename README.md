@@ -21,5 +21,6 @@ aws cloudformation deploy --profile awsmeetupgroup \
 
 aws s3 mb s3://test-apollo-acl --profile awsmeetupgroup
 
-npm i -g typeorm
-npm install -g ts-node
+aws secretsmanager create-secret --name rdsPassword --secret-string YOURPASSWORD --profile YOURPROFILE
+
+npm i -g typeorm ts-node

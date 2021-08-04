@@ -5,7 +5,6 @@ export const resolvers = {
     posts: async () => {
       return await Posts.find();
     },
-
     post: async (_: any, args: any) => {
       const { id } = args;
       return await Posts.findOne({ id });
@@ -14,16 +13,13 @@ export const resolvers = {
   Mutation: {
     addPost: async (_: any, args: any) => {
       const { title, text } = args;
-      console.log(args);
       const post = Posts.create({
         title,
         text,
       });
-
       await post.save();
       return post;
     },
-
     deletePost: async (_: any, args: any) => {
       const { id } = args;
       try {

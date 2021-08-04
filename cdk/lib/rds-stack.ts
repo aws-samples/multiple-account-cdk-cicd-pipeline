@@ -1,3 +1,4 @@
+require("dotenv").config();
 import { App, Stack, StackProps } from "@aws-cdk/core";
 import {
   DatabaseInstance,
@@ -24,7 +25,7 @@ export class RDSStack extends Stack {
     super(scope, id, props);
 
     this.secret = Secret.fromSecretAttributes(this, "rdsPassword", {
-      secretArn: `arn:aws:secretsmanager:${process.env.CDK_DEFAULT_REGION}:807230335956:secret:rdsPassword-3Eir69`,
+      secretArn: `arn:aws:secretsmanager:${process.env.CDK_DEFAULT_REGION}:${process.env.CDK_DEFAULT_ACCOUNT}:secret:rdsPassword-3Eir69`,
     });
 
     this.postgresRDSInstance = new DatabaseInstance(

@@ -1,3 +1,4 @@
+require("dotenv").config();
 import { Stack, StackProps, Construct } from "@aws-cdk/core";
 import { LambdaRestApi } from "@aws-cdk/aws-apigateway";
 import { Function, Runtime, Code } from "@aws-cdk/aws-lambda";
@@ -18,7 +19,7 @@ export class GraphqlApiStack extends Stack {
     super(scope, id, props);
 
     const secret = Secret.fromSecretAttributes(this, "rdsPassword", {
-      secretArn: `arn:aws:secretsmanager:${process.env.CDK_DEFAULT_REGION}:807230335956:secret:rdsPassword-3Eir69`,
+      secretArn: `arn:aws:secretsmanager:${process.env.CDK_DEFAULT_REGION}:${process.env.CDK_DEFAULT_ACCOUNT}:secret:rdsPassword-3Eir69`,
     });
 
     const handler = new Function(this, "graphql", {
@@ -42,7 +43,7 @@ export class GraphqlApiStack extends Stack {
         TYPEORM_PASSWORD: secret.secretValue.toString(),
         TYPEORM_SYNCHRONIZE: "true",
         TYPEORM_LOGGING: "true",
-        TYPEORM_ENTITIES: "./src/entity/*.entity.ts",
+        TYPEORM_ENTITIES: "./build/src/entity/*.entity.js",
       },
     });
 
