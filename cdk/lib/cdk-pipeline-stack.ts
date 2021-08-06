@@ -10,41 +10,39 @@ interface AppStageProps extends StageProps {
 }
 
 class AppStage extends Stage {
-  public readonly apiPath: CfnOutput;
-  public readonly rdsEndpoint: CfnOutput;
-  public readonly rdsUsername: CfnOutput;
-  public readonly rdsDatabase: CfnOutput;
+  public readonly apiStack: GraphqlApiStack;
+  public readonly rdsStack: RDSStack;
 
   constructor(scope: Construct, id: string, props?: AppStageProps) {
     super(scope, id, props);
 
     const vpcStack = new VpcStack(this, "VPCStack");
 
-    const rdsStack = new RDSStack(this, "RDSStack", {
+    this.rdsStack = new RDSStack(this, "RDSStack", {
       vpc: vpcStack.vpc,
       securityGroup: vpcStack.ingressSecurityGroup,
       rdsPwdSecretArnSsmParameterName: props?.rdsPasswordSecretArnSsmParamName || ""
     });
 
-    const api = new GraphqlApiStack(this, "APIStack", {
+    this.apiStack = new GraphqlApiStack(this, "APIStack", {
       vpc: vpcStack.vpc,
       inboundDbAccessSecurityGroup:
-        rdsStack.postgresRDSInstance.connections.securityGroups[0].securityGroupId,
-      rdsEndpoint: rdsStack.postgresRDSInstance.dbInstanceEndpointAddress,
-      rdsDbUser: rdsStack.rdsDbUser,
-      rdsDbName: rdsStack.rdsDbName,
-      rdsPort: rdsStack.rdsPort,
-      rdsPassword: rdsStack.rdsPassword
+        this.rdsStack.postgresRDSInstance.connections.securityGroups[0].securityGroupId,
+      rdsEndpoint: this.rdsStack.postgresRDSInstance.dbInstanceEndpointAddress,
+      rdsDbUser: this.rdsStack.rdsDbUser,
+      rdsDbName: this.rdsStack.rdsDbName,
+      rdsPort: this.rdsStack.rdsPort,
+      rdsPassword: this.rdsStack.rdsPassword
     });
-
-    this.apiPath = api.apiPathOutput;
-    this.rdsEndpoint = rdsStack.rdsEndpointOutput;
-    this.rdsUsername = rdsStack.rdsUsernameOutput;
-    this.rdsDatabase = rdsStack.rdsDatabaseOutput;
   }
 }
 
 export class CdkPipelineStack extends Stack {
+  public readonly apiPath: CfnOutput;
+  public readonly rdsEndpoint: CfnOutput;
+  public readonly rdsUsername: CfnOutput;
+  public readonly rdsDatabase: CfnOutput;
+
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -64,9 +62,15 @@ export class CdkPipelineStack extends Stack {
       }),
     });
 
-    pipeline.addStage(new AppStage(this, "demo", {
+    const stage = new AppStage(this, "demo", {
       env: { account: Aws.ACCOUNT_ID, region: Aws.REGION },
       rdsPasswordSecretArnSsmParamName: "rds-password-secret-arn"
-    }));
+    });
+    pipeline.addStage(stage);
+
+    this.apiPath = stage.apiStack.apiPathOutput;
+    this.rdsEndpoint = stage.rdsStack.rdsEndpointOutput;
+    this.rdsUsername = stage.rdsStack.rdsUsernameOutput;
+    this.rdsDatabase = stage.rdsStack.rdsDatabaseOutput;
   }
 }
