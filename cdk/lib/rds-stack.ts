@@ -1,5 +1,7 @@
 require("dotenv").config();
-import { App, Stack, StackProps } from "@aws-cdk/core";
+import { Construct, Stack, StackProps, CfnOutput } from "@aws-cdk/core";
+import { StringParameter } from '@aws-cdk/aws-ssm';
+
 import {
   DatabaseInstance,
   DatabaseInstanceEngine,
@@ -12,22 +14,28 @@ import { SecurityGroup, SubnetType, Vpc } from "@aws-cdk/aws-ec2";
 export interface RDSStackProps extends StackProps {
   vpc: Vpc;
   securityGroup: SecurityGroup;
+  rdsPwdSecretArnSsmParameterName: string;
 }
 
 export class RDSStack extends Stack {
-  readonly secret: ISecret;
+  public readonly rdsEndpointOutput: CfnOutput;
+  public readonly rdsUsernameOutput: CfnOutput;
+  public readonly rdsDatabaseOutput: CfnOutput;
+
   readonly postgresRDSInstance: DatabaseInstance;
   readonly rdsDbUser: string = process.env.TYPEORM_USERNAME || "serverless";
   readonly rdsDbName: string = process.env.TYPEORM_DATABASE || "awsmeetupgroup";
   readonly rdsPort: number = 5432;
-
-  constructor(scope: App, id: string, props: RDSStackProps) {
+  readonly rdsPassword: ISecret;
+  
+  constructor(scope: Construct, id: string, props: RDSStackProps) {
     super(scope, id, props);
-
-    this.secret = Secret.fromSecretAttributes(this, "rdsPassword", {
-      secretArn: `arn:aws:secretsmanager:${process.env.CDK_DEFAULT_REGION}:${process.env.CDK_DEFAULT_ACCOUNT}:secret:rdsPassword-3Eir69`,
+    
+    const secretArn = StringParameter.valueForStringParameter(this, props.rdsPwdSecretArnSsmParameterName);
+    this.rdsPassword = Secret.fromSecretAttributes(this, "rdsPassword", {
+      secretArn: secretArn
     });
-
+    
     this.postgresRDSInstance = new DatabaseInstance(
       this,
       "postgres-rds-instance",
@@ -38,7 +46,7 @@ export class RDSStack extends Stack {
         vpc: props.vpc,
         credentials: {
           username: this.rdsDbUser,
-          password: this.secret.secretValue,
+          password: this.rdsPassword.secretValue,
         },
         securityGroups: [props.securityGroup],
         vpcPlacement: { subnetType: SubnetType.ISOLATED },
@@ -50,5 +58,20 @@ export class RDSStack extends Stack {
         port: this.rdsPort,
       }
     );
+
+    this.rdsEndpointOutput = new CfnOutput(this, "rdsEndpoint", {
+      value: this.postgresRDSInstance.instanceEndpoint.socketAddress,
+      description: "Endpoint to access RDS instance"
+    });
+    
+    this.rdsUsernameOutput = new CfnOutput(this, "rdsUsername", {
+      value: this.rdsDbUser,
+      description: "Root user of RDS instance"
+    });
+
+    this.rdsDatabaseOutput = new CfnOutput(this, "rdsDatabase", {
+      value: this.rdsDbName,
+      description: "Default database of RDS instance"
+    });
   }
 }

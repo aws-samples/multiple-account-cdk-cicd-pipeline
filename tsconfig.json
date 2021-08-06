@@ -21,10 +21,13 @@
     "strictPropertyInitialization": false,
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],
+    "esModuleInterop": true
   },
   "exclude": [
     "node_modules",
     "cdk.out"
   ]
 }
+
+

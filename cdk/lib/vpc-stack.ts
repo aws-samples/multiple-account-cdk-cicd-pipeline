@@ -1,4 +1,4 @@
-import { App, Stack } from "@aws-cdk/core";
+import { Construct, Stack } from "@aws-cdk/core";
 import { Peer, Port, SecurityGroup, SubnetType, Vpc } from "@aws-cdk/aws-ec2";
 
 export class VpcStack extends Stack {
@@ -6,7 +6,7 @@ export class VpcStack extends Stack {
   readonly ingressSecurityGroup: SecurityGroup;
   readonly egressSecurityGroup: SecurityGroup;
 
-  constructor(scope: App, id: string) {
+  constructor(scope: Construct, id: string) {
     super(scope, id);
 
     this.vpc = new Vpc(this, "CustomVPC", {

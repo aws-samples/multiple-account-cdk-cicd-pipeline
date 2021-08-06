@@ -1,9 +1,10 @@
 require("dotenv").config();
-import { Stack, StackProps, Construct } from "@aws-cdk/core";
+import { Stack, StackProps, Construct, CfnOutput } from "@aws-cdk/core";
 import { LambdaRestApi } from "@aws-cdk/aws-apigateway";
 import { Function, Runtime, Code } from "@aws-cdk/aws-lambda";
 import { Vpc, SecurityGroup, SubnetType } from "@aws-cdk/aws-ec2";
-import { Secret } from "@aws-cdk/aws-secretsmanager";
+import { ISecret } from "@aws-cdk/aws-secretsmanager";
+
 
 export interface LambdaStackProps extends StackProps {
   vpc: Vpc;
@@ -12,15 +13,14 @@ export interface LambdaStackProps extends StackProps {
   rdsDbUser: string;
   rdsDbName: string;
   rdsPort: number;
+  rdsPassword: ISecret;
 }
 
 export class GraphqlApiStack extends Stack {
+  public readonly apiPathOutput: CfnOutput;
+
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
-
-    const secret = Secret.fromSecretAttributes(this, "rdsPassword", {
-      secretArn: `arn:aws:secretsmanager:${process.env.CDK_DEFAULT_REGION}:${process.env.CDK_DEFAULT_ACCOUNT}:secret:rdsPassword-3Eir69`,
-    });
 
     const handler = new Function(this, "graphql", {
       runtime: Runtime.NODEJS_14_X,
@@ -40,7 +40,7 @@ export class GraphqlApiStack extends Stack {
         TYPEORM_HOST: props.rdsEndpoint,
         TYPEORM_DATABASE: props.rdsDbName,
         TYPEORM_PORT: props.rdsPort.toString(),
-        TYPEORM_PASSWORD: secret.secretValue.toString(),
+        TYPEORM_PASSWORD: props.rdsPassword.secretValue.toString(),
         TYPEORM_SYNCHRONIZE: "true",
         TYPEORM_LOGGING: "true",
         TYPEORM_ENTITIES: "./build/src/entity/*.entity.js",
@@ -54,5 +54,10 @@ export class GraphqlApiStack extends Stack {
 
     const graphql = api.root.addResource("graphql");
     graphql.addMethod("ANY");
+
+    this.apiPathOutput = new CfnOutput(this, "apiPath", {
+      value: api.root.path,
+      description: "Path of the API"
+    });
   }
 }

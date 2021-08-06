@@ -6,12 +6,16 @@ import { VpcStack } from "../lib/vpc-stack";
 import { RDSStack } from "../lib/rds-stack";
 
 const app = new cdk.App();
+const rdsPasswordArnSsmParamName = "rds-password-secret-arn" 
+
+// Basic networking
 const vpcStack = new VpcStack(app, "VPCStack");
 
 // RDS Postgres
 const rdsStack = new RDSStack(app, "RDSStack", {
   vpc: vpcStack.vpc,
   securityGroup: vpcStack.ingressSecurityGroup,
+  rdsPwdSecretArnSsmParameterName: rdsPasswordArnSsmParamName
 });
 
 // Serverless Lambda/API Gateway Graphql API
@@ -23,4 +27,5 @@ new GraphqlApiStack(app, "APIStack", {
   rdsDbUser: rdsStack.rdsDbUser,
   rdsDbName: rdsStack.rdsDbName,
   rdsPort: rdsStack.rdsPort,
+  rdsPassword: rdsStack.rdsPassword
 });
