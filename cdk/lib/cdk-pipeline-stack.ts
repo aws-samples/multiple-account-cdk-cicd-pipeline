@@ -1,5 +1,6 @@
-import { CfnOutput, Construct, Stage, StageProps, Stack, StackProps, Aws, } from "@aws-cdk/core";
+import { CfnOutput, Construct, Stage, StageProps, Stack, StackProps, Aws } from "@aws-cdk/core";
 import { CodePipeline, CodePipelineSource, ShellStep } from "@aws-cdk/pipelines";
+import { PolicyDocument, PolicyStatement, Effect, Policy } from "@aws-cdk/aws-iam";
 import { GraphqlApiStack } from "./api-stack";
 import { VpcStack } from "./vpc-stack";
 import { RDSStack } from "./rds-stack";
@@ -42,6 +43,7 @@ export class CdkPipelineStack extends Stack {
   public readonly rdsEndpoint: CfnOutput;
   public readonly rdsUsername: CfnOutput;
   public readonly rdsDatabase: CfnOutput;
+  public readonly pipelineRole: CfnOutput;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -49,12 +51,15 @@ export class CdkPipelineStack extends Stack {
     const githubOrg = process.env.GITHUB_ORG || "kevasync";
     const githubRepo = process.env.GITHUB_REPO || "awsmug-serverless-graphql-api";
     const githubBranch = process.env.GITHUB_REPO || "master";
+    // const crossAccountRole = process.env.CROSS_ACCOUNT_PIPELINE_ROLE || "OrganizationAccountAccessRole";
+    const crossAccountId = process.env.SECONDARY_ACCOUNT_ID;
 
     const pipeline = new CodePipeline(this, "Pipeline", {
+      crossAccountKeys: true,
       pipelineName: "AWSMugPipeline",
       synth: new ShellStep("deploy", {
         input: CodePipelineSource.gitHub(`${githubOrg}/${githubRepo}`, githubBranch),
-        commands: [
+        commands: [ 
           "npm ci",
           "npm run build",
           "npx cdk synth"
@@ -62,15 +67,46 @@ export class CdkPipelineStack extends Stack {
       }),
     });
 
-    const stage = new AppStage(this, "demo", {
+    
+    
+    // const policy = new Policy(this, "crossAccountPolicy");
+    // policy.addStatements(new PolicyStatement({
+    //   effect: Effect.ALLOW,
+    //   actions: ["sts:AssumeRole"],
+    //   resources: [`arn:aws:iam::${crossAccountId}:role/${crossAccountRole}`]
+    // }));
+    // pipeline.pipeline.role.attachInlinePolicy(policy);
+
+    // pipeline.pipeline.addToRolePolicy(new PolicyStatement({
+    //   effect: Effect.ALLOW,
+    //   actions: ["sts:AssumeRole"],
+    //   resources: [`arn:aws:iam::${crossAccountRole}:role/${crossAccountRole}`]
+    // }));
+
+    const devStage = new AppStage(this, "dev", {
       env: { account: Aws.ACCOUNT_ID, region: Aws.REGION },
       rdsPasswordSecretArnSsmParamName: "rds-password-secret-arn"
     });
-    pipeline.addStage(stage);
+    const devWave = pipeline.addWave("devWave");
+    devWave.addStage(devStage);
 
-    this.apiPath = stage.apiStack.apiPathOutput;
-    this.rdsEndpoint = stage.rdsStack.rdsEndpointOutput;
-    this.rdsUsername = stage.rdsStack.rdsUsernameOutput;
-    this.rdsDatabase = stage.rdsStack.rdsDatabaseOutput;
+    const prdStage = new AppStage(this, "prd", {
+      env: { account: crossAccountId, region: "us-west-2" },
+      rdsPasswordSecretArnSsmParamName: "rds-password-secret-arn"
+    });
+    const prdWave = pipeline.addWave("prdWave");
+    prdWave.addStage(prdStage);
+
+    
+   
+    
+    this.apiPath = devStage.apiStack.apiPathOutput;
+    this.rdsEndpoint = devStage.rdsStack.rdsEndpointOutput;
+    this.rdsUsername = devStage.rdsStack.rdsUsernameOutput;
+    this.rdsDatabase = devStage.rdsStack.rdsDatabaseOutput;
+    // this.pipelineRole = new CfnOutput(this, "pipelineRole", {
+    //   value: pipeline.pipeline.role.roleName,
+    //   description: "Name of IAM Role assumed by pipeline"
+    // });
   }
 }

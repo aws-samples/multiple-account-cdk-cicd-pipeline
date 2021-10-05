@@ -9,3 +9,6 @@ cdk.out
 build/
 .env
 api/node_modules
+
+
+cdk.context.json

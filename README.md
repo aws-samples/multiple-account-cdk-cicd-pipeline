@@ -41,3 +41,7 @@ export GITHUB_REPO=YOUR_GITHUB_BRANCH
 *Note:* To deploy application without pipeline locally, change `cdk.json` line 2 from `"app": "npx ts-node --prefer-ts-exts cdk/bin/pipeline.ts",` to `"app": "npx ts-node --prefer-ts-exts cdk/bin/api.ts",` 
 
 Deploy pipeline manually one time: `cdk deploy`
+
+
+`aws iam attach-role-policy --role-name $PIPELINE_ROLE  --policy-arn $POLICY_ARN`
+`cdk bootstrap --trust $PIPELINE_ACCOUNT_ID --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess aws://$SECONDRY_ACCOUNT_ID/us-west-2`
