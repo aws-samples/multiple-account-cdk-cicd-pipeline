@@ -40,8 +40,14 @@ export GITHUB_REPO=YOUR_GITHUB_BRANCH
 
 *Note:* To deploy application without pipeline locally, change `cdk.json` line 2 from `"app": "npx ts-node --prefer-ts-exts cdk/bin/pipeline.ts",` to `"app": "npx ts-node --prefer-ts-exts cdk/bin/api.ts",` 
 
-Deploy pipeline manually one time: `cdk deploy`
+
 
 
 `aws iam attach-role-policy --role-name $PIPELINE_ROLE  --policy-arn $POLICY_ARN`
 `cdk bootstrap --trust $PIPELINE_ACCOUNT_ID --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess aws://$SECONDRY_ACCOUNT_ID/us-west-2`
+Deploy pipeline manually one time: `cdk deploy`
+Cacnel execution of pipeline
+Set Env Var `` in CodeBuild step
+In source account, add ability to assume cdk roles created by bootstrap command to policy used for cross account access
+In source account, add policy to role used to build and deploy that was created when the pipeline was deployed
+Create ssm param `rds-password-secret-arn` for arn to secret manager entry with db pwd secret (In account 1)

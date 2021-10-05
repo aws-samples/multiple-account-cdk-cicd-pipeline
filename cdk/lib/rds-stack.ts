@@ -14,7 +14,7 @@ import { SecurityGroup, SubnetType, Vpc } from "@aws-cdk/aws-ec2";
 export interface RDSStackProps extends StackProps {
   vpc: Vpc;
   securityGroup: SecurityGroup;
-  rdsPwdSecretArnSsmParameterName: string;
+  rdsPwdSecretArn: string;
 }
 
 export class RDSStack extends Stack {
@@ -31,9 +31,9 @@ export class RDSStack extends Stack {
   constructor(scope: Construct, id: string, props: RDSStackProps) {
     super(scope, id, props);
     
-    const secretArn = StringParameter.valueForStringParameter(this, props.rdsPwdSecretArnSsmParameterName);
+    
     this.rdsPassword = Secret.fromSecretAttributes(this, "rdsPassword", {
-      secretArn: secretArn
+      secretArn: props.rdsPwdSecretArn
     });
     
     this.postgresRDSInstance = new DatabaseInstance(

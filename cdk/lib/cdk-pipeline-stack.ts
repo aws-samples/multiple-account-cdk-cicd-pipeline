@@ -7,7 +7,7 @@ import { RDSStack } from "./rds-stack";
 
 // Define deployable unit of our app in a stage; consider putting this in seperate file
 interface AppStageProps extends StageProps {
-  rdsPasswordSecretArnSsmParamName: string;
+  rdsPasswordSecretArn: string;
 }
 
 class AppStage extends Stage {
@@ -22,7 +22,7 @@ class AppStage extends Stage {
     this.rdsStack = new RDSStack(this, "RDSStack", {
       vpc: vpcStack.vpc,
       securityGroup: vpcStack.ingressSecurityGroup,
-      rdsPwdSecretArnSsmParameterName: props?.rdsPasswordSecretArnSsmParamName || ""
+      rdsPwdSecretArn: props?.rdsPasswordSecretArn || ""
     });
 
     this.apiStack = new GraphqlApiStack(this, "APIStack", {
@@ -51,8 +51,10 @@ export class CdkPipelineStack extends Stack {
     const githubOrg = process.env.GITHUB_ORG || "kevasync";
     const githubRepo = process.env.GITHUB_REPO || "awsmug-serverless-graphql-api";
     const githubBranch = process.env.GITHUB_REPO || "master";
+    const crossAccountId = process.env.SECONDARY_ACCOUNT_ID || "";
+    const rdsPasswordArn = process.env.RDS_PWD_ARN || "";
     // const crossAccountRole = process.env.CROSS_ACCOUNT_PIPELINE_ROLE || "OrganizationAccountAccessRole";
-    const crossAccountId = process.env.SECONDARY_ACCOUNT_ID;
+    
 
     const pipeline = new CodePipeline(this, "Pipeline", {
       crossAccountKeys: true,
@@ -83,16 +85,18 @@ export class CdkPipelineStack extends Stack {
     //   resources: [`arn:aws:iam::${crossAccountRole}:role/${crossAccountRole}`]
     // }));
 
+    
+
     const devStage = new AppStage(this, "dev", {
       env: { account: Aws.ACCOUNT_ID, region: Aws.REGION },
-      rdsPasswordSecretArnSsmParamName: "rds-password-secret-arn"
+      rdsPasswordSecretArn: rdsPasswordArn
     });
     const devWave = pipeline.addWave("devWave");
     devWave.addStage(devStage);
 
     const prdStage = new AppStage(this, "prd", {
       env: { account: crossAccountId, region: "us-west-2" },
-      rdsPasswordSecretArnSsmParamName: "rds-password-secret-arn"
+      rdsPasswordSecretArn: rdsPasswordArn
     });
     const prdWave = pipeline.addWave("prdWave");
     prdWave.addStage(prdStage);
