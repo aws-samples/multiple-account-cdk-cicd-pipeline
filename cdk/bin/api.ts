@@ -6,7 +6,6 @@ import { VpcStack } from "../lib/vpc-stack";
 import { RDSStack } from "../lib/rds-stack";
 
 const app = new cdk.App();
-const rdsPasswordArnSsmParamName = "rds-password-secret-arn" 
 
 // Basic networking
 const vpcStack = new VpcStack(app, "VPCStack");
@@ -15,7 +14,7 @@ const vpcStack = new VpcStack(app, "VPCStack");
 const rdsStack = new RDSStack(app, "RDSStack", {
   vpc: vpcStack.vpc,
   securityGroup: vpcStack.ingressSecurityGroup,
-  rdsPwdSecretArn: process.env.RDS_PWD_ARN || ""
+  stage: "standalone"
 });
 
 // Serverless Lambda/API Gateway Graphql API

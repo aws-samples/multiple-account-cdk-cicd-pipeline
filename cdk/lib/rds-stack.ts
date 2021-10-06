@@ -1,6 +1,5 @@
 require("dotenv").config();
 import { Construct, Stack, StackProps, CfnOutput } from "@aws-cdk/core";
-import { StringParameter } from '@aws-cdk/aws-ssm';
 
 import {
   DatabaseInstance,
@@ -13,8 +12,8 @@ import { SecurityGroup, SubnetType, Vpc } from "@aws-cdk/aws-ec2";
 
 export interface RDSStackProps extends StackProps {
   vpc: Vpc;
-  securityGroup: SecurityGroup;
-  rdsPwdSecretArn: string;
+  securityGroup: SecurityGroup, 
+  stage: String
 }
 
 export class RDSStack extends Stack {
@@ -31,9 +30,18 @@ export class RDSStack extends Stack {
   constructor(scope: Construct, id: string, props: RDSStackProps) {
     super(scope, id, props);
     
-    
-    this.rdsPassword = Secret.fromSecretAttributes(this, "rdsPassword", {
-      secretArn: props.rdsPwdSecretArn
+    const pwdId = `rds-password-${props.stage}`;
+    this.rdsPassword = new Secret(this, pwdId, {
+      secretName: pwdId,
+      generateSecretString: {
+        excludeCharacters: `/@" `,
+        excludePunctuation: true,
+        includeSpace: false,
+        excludeNumbers: false,
+        excludeLowercase: false,
+        excludeUppercase: false,
+        passwordLength: 24
+      }
     });
     
     this.postgresRDSInstance = new DatabaseInstance(

@@ -5,16 +5,11 @@ import { GraphqlApiStack } from "./api-stack";
 import { VpcStack } from "./vpc-stack";
 import { RDSStack } from "./rds-stack";
 
-// Define deployable unit of our app in a stage; consider putting this in seperate file
-interface AppStageProps extends StageProps {
-  rdsPasswordSecretArn: string;
-}
-
 class AppStage extends Stage {
   public readonly apiStack: GraphqlApiStack;
   public readonly rdsStack: RDSStack;
 
-  constructor(scope: Construct, id: string, props?: AppStageProps) {
+  constructor(scope: Construct, id: string, props?: StageProps) {
     super(scope, id, props);
 
     const vpcStack = new VpcStack(this, "VPCStack");
@@ -22,7 +17,7 @@ class AppStage extends Stage {
     this.rdsStack = new RDSStack(this, "RDSStack", {
       vpc: vpcStack.vpc,
       securityGroup: vpcStack.ingressSecurityGroup,
-      rdsPwdSecretArn: props?.rdsPasswordSecretArn || ""
+      stage: id
     });
 
     this.apiStack = new GraphqlApiStack(this, "APIStack", {
@@ -88,21 +83,17 @@ export class CdkPipelineStack extends Stack {
     
 
     const devStage = new AppStage(this, "dev", {
-      env: { account: Aws.ACCOUNT_ID, region: Aws.REGION },
-      rdsPasswordSecretArn: rdsPasswordArn
+      env: { account: Aws.ACCOUNT_ID, region: Aws.REGION }
     });
     const devWave = pipeline.addWave("devWave");
     devWave.addStage(devStage);
 
     const prdStage = new AppStage(this, "prd", {
-      env: { account: crossAccountId, region: "us-west-2" },
-      rdsPasswordSecretArn: rdsPasswordArn
+      env: { account: crossAccountId, region: "us-west-2" }
     });
     const prdWave = pipeline.addWave("prdWave");
     prdWave.addStage(prdStage);
 
-    
-   
     
     this.apiPath = devStage.apiStack.apiPathOutput;
     this.rdsEndpoint = devStage.rdsStack.rdsEndpointOutput;
