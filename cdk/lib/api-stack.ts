@@ -1,12 +1,12 @@
 require("dotenv").config();
-import { Stack, StackProps, Construct, CfnOutput } from "@aws-cdk/core";
+import { NestedStack, NestedStackProps, Construct, CfnOutput } from "@aws-cdk/core";
 import { LambdaRestApi } from "@aws-cdk/aws-apigateway";
 import { Function, Runtime, Code } from "@aws-cdk/aws-lambda";
 import { Vpc, SecurityGroup, SubnetType } from "@aws-cdk/aws-ec2";
 import { ISecret } from "@aws-cdk/aws-secretsmanager";
 
 
-export interface LambdaStackProps extends StackProps {
+export interface LambdaStackProps extends NestedStackProps {
   vpc: Vpc;
   inboundDbAccessSecurityGroup: string;
   rdsEndpoint: string;
@@ -16,7 +16,7 @@ export interface LambdaStackProps extends StackProps {
   rdsPassword: ISecret;
 }
 
-export class GraphqlApiStack extends Stack {
+export class GraphqlApiStack extends NestedStack {
   public readonly apiPathOutput: CfnOutput;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {

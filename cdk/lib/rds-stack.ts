@@ -1,5 +1,5 @@
 require("dotenv").config();
-import { Construct, Stack, StackProps, CfnOutput } from "@aws-cdk/core";
+import { Construct, NestedStack, NestedStackProps, CfnOutput } from "@aws-cdk/core";
 import {
   DatabaseInstance,
   DatabaseInstanceEngine,
@@ -11,7 +11,7 @@ import {
 import { ISecret, Secret } from "@aws-cdk/aws-secretsmanager";
 import { SecurityGroup, SubnetType, Vpc, InstanceType, InstanceClass, InstanceSize } from "@aws-cdk/aws-ec2";
 
-export interface RDSStackProps extends StackProps {
+export interface RDSStackProps extends NestedStackProps {
   vpc: Vpc;
   securityGroup: SecurityGroup, 
   stage: String,
@@ -19,7 +19,7 @@ export interface RDSStackProps extends StackProps {
   primaryRdsPassword?: ISecret
 }
 
-export class RDSStack extends Stack {
+export class RDSStack extends NestedStack {
   public readonly rdsEndpointOutput: CfnOutput;
   public readonly rdsUsernameOutput: CfnOutput;
   public readonly rdsDatabaseOutput: CfnOutput;

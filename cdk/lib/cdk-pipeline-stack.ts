@@ -18,10 +18,10 @@ class AppStage extends Stage {
 
   constructor(scope: Construct, id: string, props?: AppStageProps) {
     super(scope, id, props);
+    const stageParentStack = new Stack(this, `${id}Stack`);
+    const vpcStack = new VpcStack(stageParentStack, "VPCStack");
 
-    const vpcStack = new VpcStack(this, "VPCStack");
-
-    this.rdsStack = new RDSStack(this, "RDSStack", {
+    this.rdsStack = new RDSStack(stageParentStack, "RDSStack", {
       vpc: vpcStack.vpc,
       securityGroup: vpcStack.ingressSecurityGroup,
       stage: id,
@@ -29,7 +29,7 @@ class AppStage extends Stage {
       primaryRdsPassword: props?.primaryRdsPassword
     });
 
-    this.apiStack = new GraphqlApiStack(this, "APIStack", {
+    this.apiStack = new GraphqlApiStack(stageParentStack, "APIStack", {
       vpc: vpcStack.vpc,
       inboundDbAccessSecurityGroup:
         this.rdsStack.postgresRDSInstance.connections.securityGroups[0].securityGroupId,
@@ -95,7 +95,7 @@ export class CdkPipelineStack extends Stack {
     pipeline.addStage(devStage);
     
     
-    const prdWave = pipeline.addWave("prd");
+    // const prdWave = pipeline.addWave("prd");
     const prdStagePrimary = new AppStage(this, "prd-primary", {
       env: { account: crossAccountId, region: "us-west-2" }
     });
@@ -104,9 +104,9 @@ export class CdkPipelineStack extends Stack {
       primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance,
       primaryRdsPassword: prdStagePrimary.rdsStack.rdsPassword
     });
-    prdStageBackup.rdsStack.addDependency(prdStagePrimary.rdsStack)
-    prdWave.addStage(prdStagePrimary);
-    prdWave.addStage(prdStageBackup);
+    // prdStageBackup.rdsStack.addDependency(prdStagePrimary.rdsStack)
+    pipeline.addStage(prdStagePrimary);
+    pipeline.addStage(prdStageBackup);
     
     this.apiPath = devStage.apiStack.apiPathOutput;
     this.rdsEndpoint = devStage.rdsStack.rdsEndpointOutput;
