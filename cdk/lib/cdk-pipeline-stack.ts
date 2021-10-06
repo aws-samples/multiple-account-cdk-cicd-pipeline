@@ -89,15 +89,14 @@ export class CdkPipelineStack extends Stack {
     //   resources: [`arn:aws:iam::${crossAccountRole}:role/${crossAccountRole}`]
     // }));
 
-    
-
     const devStage = new AppStage(this, "dev", {
       env: { account: Aws.ACCOUNT_ID, region: Aws.REGION }
     });
-    const devWave = pipeline.addWave("devWave");
-    devWave.addStage(devStage);
+    pipeline.addStage(devStage);
 
-    const prdStagePrimary = new AppStage(this, "prd", {
+    
+    const prdWave = pipeline.addWave("prd");
+    const prdStagePrimary = new AppStage(this, "prd-primary", {
       env: { account: crossAccountId, region: "us-west-2" }
     });
     const prdStageBackup = new AppStage(this, "prd-backup", {
@@ -105,12 +104,11 @@ export class CdkPipelineStack extends Stack {
       primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance,
       primaryRdsPassword: prdStagePrimary.rdsStack.rdsPassword
     });
-
-    const prdWave = pipeline.addWave("prdWave");
+    
     prdWave.addStage(prdStagePrimary);
     prdWave.addStage(prdStageBackup);
 
-    
+
     this.apiPath = devStage.apiStack.apiPathOutput;
     this.rdsEndpoint = devStage.rdsStack.rdsEndpointOutput;
     this.rdsUsername = devStage.rdsStack.rdsUsernameOutput;
