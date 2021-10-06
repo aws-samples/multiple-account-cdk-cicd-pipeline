@@ -1,19 +1,22 @@
 require("dotenv").config();
 import { Construct, Stack, StackProps, CfnOutput } from "@aws-cdk/core";
-
 import {
   DatabaseInstance,
   DatabaseInstanceEngine,
   PostgresEngineVersion,
   StorageType,
+  IDatabaseInstance,
+  DatabaseInstanceReadReplica
 } from "@aws-cdk/aws-rds";
 import { ISecret, Secret } from "@aws-cdk/aws-secretsmanager";
-import { SecurityGroup, SubnetType, Vpc } from "@aws-cdk/aws-ec2";
+import { SecurityGroup, SubnetType, Vpc, InstanceType, InstanceClass, InstanceSize } from "@aws-cdk/aws-ec2";
 
 export interface RDSStackProps extends StackProps {
   vpc: Vpc;
   securityGroup: SecurityGroup, 
-  stage: String
+  stage: String,
+  primaryRdsInstance?: IDatabaseInstance,
+  primaryRdsPassword?: ISecret
 }
 
 export class RDSStack extends Stack {
@@ -21,7 +24,7 @@ export class RDSStack extends Stack {
   public readonly rdsUsernameOutput: CfnOutput;
   public readonly rdsDatabaseOutput: CfnOutput;
 
-  readonly postgresRDSInstance: DatabaseInstance;
+  readonly postgresRDSInstance: IDatabaseInstance;
   readonly rdsDbUser: string = process.env.TYPEORM_USERNAME || "serverless";
   readonly rdsDbName: string = process.env.TYPEORM_DATABASE || "awsmeetupgroup";
   readonly rdsPort: number = 5432;
@@ -30,42 +33,61 @@ export class RDSStack extends Stack {
   constructor(scope: Construct, id: string, props: RDSStackProps) {
     super(scope, id, props);
     
-    const pwdId = `rds-password-${props.stage}`;
-    this.rdsPassword = new Secret(this, pwdId, {
-      secretName: pwdId,
-      generateSecretString: {
-        excludeCharacters: `/@" `,
-        excludePunctuation: true,
-        includeSpace: false,
-        excludeNumbers: false,
-        excludeLowercase: false,
-        excludeUppercase: false,
-        passwordLength: 24
-      }
-    });
+    const dbId = `postgres-rds-instance-${props.stage}`;
+    const rdsInstanceType = InstanceType.of(InstanceClass.M5, InstanceSize.LARGE);
     
-    this.postgresRDSInstance = new DatabaseInstance(
-      this,
-      "postgres-rds-instance",
-      {
-        engine: DatabaseInstanceEngine.postgres({
-          version: PostgresEngineVersion.VER_10_15,
-        }),
+    if(props.primaryRdsInstance && props.primaryRdsPassword) {
+      this.rdsPassword = props.primaryRdsPassword;
+      this.postgresRDSInstance = new DatabaseInstanceReadReplica(this, dbId, {
+        instanceIdentifier: dbId,
+        sourceDatabaseInstance: props.primaryRdsInstance,
         vpc: props.vpc,
-        credentials: {
-          username: this.rdsDbUser,
-          password: this.rdsPassword.secretValue,
-        },
         securityGroups: [props.securityGroup],
         vpcPlacement: { subnetType: SubnetType.ISOLATED },
         storageEncrypted: true,
         multiAz: false,
-        allocatedStorage: 25,
+        instanceType: rdsInstanceType,
         storageType: StorageType.GP2,
-        databaseName: this.rdsDbName,
         port: this.rdsPort,
-      }
-    );
+      });
+    } else {
+      const pwdId = `rds-password-${props.stage}`;
+      this.rdsPassword = new Secret(this, pwdId, {
+        secretName: pwdId,
+        generateSecretString: {
+          excludeCharacters: `/@" `,
+          excludePunctuation: true,
+          includeSpace: false,
+          excludeNumbers: false,
+          excludeLowercase: false,
+          excludeUppercase: false,
+          passwordLength: 24
+        }
+      });
+      this.postgresRDSInstance = new DatabaseInstance(this, dbId,
+        {
+          instanceIdentifier: dbId,
+          instanceType: rdsInstanceType,
+          engine: DatabaseInstanceEngine.postgres({
+            version: PostgresEngineVersion.VER_10_15,
+          }),
+          vpc: props.vpc,
+          credentials: {
+            username: this.rdsDbUser,
+            password: this.rdsPassword.secretValue,
+          },
+          securityGroups: [props.securityGroup],
+          vpcPlacement: { subnetType: SubnetType.ISOLATED },
+          storageEncrypted: true,
+          multiAz: false,
+          allocatedStorage: 25,
+          storageType: StorageType.GP2,
+          databaseName: this.rdsDbName,
+          port: this.rdsPort,
+        }
+      );
+    }
+    
 
     this.rdsEndpointOutput = new CfnOutput(this, "rdsEndpoint", {
       value: this.postgresRDSInstance.instanceEndpoint.socketAddress,

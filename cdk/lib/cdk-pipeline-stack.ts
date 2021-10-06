@@ -4,12 +4,19 @@ import { PolicyDocument, PolicyStatement, Effect, Policy } from "@aws-cdk/aws-ia
 import { GraphqlApiStack } from "./api-stack";
 import { VpcStack } from "./vpc-stack";
 import { RDSStack } from "./rds-stack";
+import { IDatabaseInstance } from "@aws-cdk/aws-rds";
+import { ISecret } from "@aws-cdk/aws-secretsmanager";
+
+export interface AppStageProps extends StageProps {
+  primaryRdsInstance?: IDatabaseInstance,
+  primaryRdsPassword?: ISecret
+}
 
 class AppStage extends Stage {
   public readonly apiStack: GraphqlApiStack;
   public readonly rdsStack: RDSStack;
 
-  constructor(scope: Construct, id: string, props?: StageProps) {
+  constructor(scope: Construct, id: string, props?: AppStageProps) {
     super(scope, id, props);
 
     const vpcStack = new VpcStack(this, "VPCStack");
@@ -17,7 +24,9 @@ class AppStage extends Stage {
     this.rdsStack = new RDSStack(this, "RDSStack", {
       vpc: vpcStack.vpc,
       securityGroup: vpcStack.ingressSecurityGroup,
-      stage: id
+      stage: id,
+      primaryRdsInstance: props?.primaryRdsInstance,
+      primaryRdsPassword: props?.primaryRdsPassword
     });
 
     this.apiStack = new GraphqlApiStack(this, "APIStack", {
@@ -88,11 +97,18 @@ export class CdkPipelineStack extends Stack {
     const devWave = pipeline.addWave("devWave");
     devWave.addStage(devStage);
 
-    const prdStage = new AppStage(this, "prd", {
+    const prdStagePrimary = new AppStage(this, "prd", {
       env: { account: crossAccountId, region: "us-west-2" }
     });
+    const prdStageBackup = new AppStage(this, "prd-backup", {
+      env: { account: crossAccountId, region: "us-east-1" },
+      primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance,
+      primaryRdsPassword: prdStagePrimary.rdsStack.rdsPassword
+    });
+
     const prdWave = pipeline.addWave("prdWave");
-    prdWave.addStage(prdStage);
+    prdWave.addStage(prdStagePrimary);
+    prdWave.addStage(prdStageBackup);
 
     
     this.apiPath = devStage.apiStack.apiPathOutput;
