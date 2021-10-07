@@ -18,10 +18,10 @@ class AppStage extends Stage {
 
   constructor(scope: Construct, id: string, props?: AppStageProps) {
     super(scope, id, props);
-    const stageParentStack = new Stack(this, `${id}Stack`);
-    const vpcStack = new VpcStack(stageParentStack, "VPCStack");
+    
+    const vpcStack = new VpcStack(this, "VPCStack");
 
-    this.rdsStack = new RDSStack(stageParentStack, "RDSStack", {
+    this.rdsStack = new RDSStack(this, "RDSStack", {
       vpc: vpcStack.vpc,
       securityGroup: vpcStack.ingressSecurityGroup,
       stage: id,
@@ -29,7 +29,7 @@ class AppStage extends Stage {
       primaryRdsPassword: props?.primaryRdsPassword
     });
 
-    this.apiStack = new GraphqlApiStack(stageParentStack, "APIStack", {
+    this.apiStack = new GraphqlApiStack(this, "APIStack", {
       vpc: vpcStack.vpc,
       inboundDbAccessSecurityGroup:
         this.rdsStack.postgresRDSInstance.connections.securityGroups[0].securityGroupId,

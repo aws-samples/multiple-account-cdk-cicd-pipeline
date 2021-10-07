@@ -1,7 +1,7 @@
-import { Construct, NestedStack } from "@aws-cdk/core";
+import { Construct, Stack } from "@aws-cdk/core";
 import { Peer, Port, SecurityGroup, SubnetType, Vpc } from "@aws-cdk/aws-ec2";
 
-export class VpcStack extends NestedStack {
+export class VpcStack extends Stack {
   readonly vpc: Vpc;
   readonly ingressSecurityGroup: SecurityGroup;
   readonly egressSecurityGroup: SecurityGroup;
