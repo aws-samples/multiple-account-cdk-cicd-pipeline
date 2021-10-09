@@ -53,6 +53,7 @@ export class RDSStack extends Stack {
       const pwdId = `rds-password-${props.stage}`;
       this.rdsPassword = new Secret(this, pwdId, {
         secretName: pwdId,
+        replicaRegions: [{region: 'us-east-1'}],
         generateSecretString: {
           excludeCharacters: `/@" `,
           excludePunctuation: true,
