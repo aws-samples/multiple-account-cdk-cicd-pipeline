@@ -100,6 +100,7 @@ export class CdkPipelineStack extends Stack {
     });
 
     const replicatedSecretArn = prdStagePrimary.rdsStack.rdsPasswordArn.replace("us-west-2", "us-east-1");
+    console.log(`secret arn: ${replicatedSecretArn}`);
     const prdStageBackup = new AppStage(this, "prd-backup", {
       env: { account: crossAccountId, region: "us-east-1" },
       primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance,
