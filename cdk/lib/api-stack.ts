@@ -13,7 +13,7 @@ export interface LambdaStackProps extends StackProps {
   rdsDbUser: string;
   rdsDbName: string;
   rdsPort: number;
-  rdsPassword: ISecret;
+  rdsPassword: string;
 }
 
 export class GraphqlApiStack extends Stack {
@@ -40,7 +40,7 @@ export class GraphqlApiStack extends Stack {
         TYPEORM_HOST: props.rdsEndpoint,
         TYPEORM_DATABASE: props.rdsDbName,
         TYPEORM_PORT: props.rdsPort.toString(),
-        TYPEORM_PASSWORD: props.rdsPassword.secretValue.toString(),
+        TYPEORM_PASSWORD: props.rdsPassword,
         TYPEORM_SYNCHRONIZE: "true",
         TYPEORM_LOGGING: "true",
         TYPEORM_ENTITIES: "./build/src/entity/*.entity.js",
