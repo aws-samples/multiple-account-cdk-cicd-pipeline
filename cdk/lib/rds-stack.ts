@@ -16,7 +16,7 @@ export interface RDSStackProps extends StackProps {
   securityGroup: SecurityGroup, 
   stage: string,
   primaryRdsInstance?: IDatabaseInstance,
-  primaryRdsPasswordName?: string
+  primaryRdsPasswordArn?: string
 }
 
 export class RDSStack extends Stack {
@@ -29,6 +29,7 @@ export class RDSStack extends Stack {
   readonly rdsDbName: string = process.env.TYPEORM_DATABASE || "awsmeetupgroup";
   readonly rdsPort: number = 5432;
   readonly rdsPassword: ISecret;
+  readonly rdsPasswordArn: string;
   
   constructor(scope: Construct, id: string, props: RDSStackProps) {
     super(scope, id, props);
@@ -37,8 +38,8 @@ export class RDSStack extends Stack {
     const rdsInstanceType = InstanceType.of(InstanceClass.M5, InstanceSize.LARGE);
     const pwdId = `rds-password-${props.stage}`;
 
-    if(props.primaryRdsInstance && props.primaryRdsPasswordName) {
-      this.rdsPassword = Secret.fromSecretNameV2(this, pwdId, props.primaryRdsPasswordName);
+    if(props.primaryRdsInstance && props.primaryRdsPasswordArn) {
+      this.rdsPassword = Secret.fromSecretCompleteArn(this, pwdId, props.primaryRdsPasswordArn);
       this.postgresRDSInstance = new DatabaseInstanceReadReplica(this, dbId, {
         instanceIdentifier: dbId,
         sourceDatabaseInstance: props.primaryRdsInstance,
@@ -64,6 +65,7 @@ export class RDSStack extends Stack {
           passwordLength: 24
         }
       });
+      this.rdsPasswordArn = this.rdsPassword.secretFullArn || this.rdsPassword.secretArn;
       this.postgresRDSInstance = new DatabaseInstance(this, dbId,
         {
           instanceIdentifier: dbId,

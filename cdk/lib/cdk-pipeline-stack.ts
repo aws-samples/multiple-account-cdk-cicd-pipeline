@@ -9,7 +9,7 @@ import { ISecret } from "@aws-cdk/aws-secretsmanager";
 
 export interface AppStageProps extends StageProps {
   primaryRdsInstance?: IDatabaseInstance,
-  primaryRdsPasswordName?: string
+  primaryRdsPasswordArn?: string
 }
 
 class AppStage extends Stage {
@@ -26,7 +26,7 @@ class AppStage extends Stage {
       securityGroup: vpcStack.ingressSecurityGroup,
       stage: id,
       primaryRdsInstance: props?.primaryRdsInstance,
-      primaryRdsPasswordName: props?.primaryRdsPasswordName
+      primaryRdsPasswordArn: props?.primaryRdsPasswordArn
     });
 
     this.apiStack = new GraphqlApiStack(this, "APIStack", {
@@ -56,7 +56,6 @@ export class CdkPipelineStack extends Stack {
     const githubRepo = process.env.GITHUB_REPO || "awsmug-serverless-graphql-api";
     const githubBranch = process.env.GITHUB_REPO || "master";
     const crossAccountId = process.env.SECONDARY_ACCOUNT_ID || "";
-    const rdsPasswordArn = process.env.RDS_PWD_ARN || "";
     // const crossAccountRole = process.env.CROSS_ACCOUNT_PIPELINE_ROLE || "OrganizationAccountAccessRole";
     
 
@@ -99,10 +98,12 @@ export class CdkPipelineStack extends Stack {
     const prdStagePrimary = new AppStage(this, "prd-primary", {
       env: { account: crossAccountId, region: "us-west-2" }
     });
+
+    const replicatedSecretArn = prdStagePrimary.rdsStack.rdsPasswordArn.replace("us-west-2", "us-east-1");
     const prdStageBackup = new AppStage(this, "prd-backup", {
       env: { account: crossAccountId, region: "us-east-1" },
       primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance,
-      primaryRdsPasswordName: "rds-password-prd-primary"
+      primaryRdsPasswordArn: replicatedSecretArn
     });
     
     pipeline.addStage(prdStagePrimary);
