@@ -16,7 +16,7 @@ export interface RDSStackProps extends StackProps {
   securityGroup: SecurityGroup, 
   stage: string,
   primaryRdsInstance?: IDatabaseInstance,
-  primaryRdsPassword?: ISecret
+  primaryRdsPasswordName?: string
 }
 
 export class RDSStack extends Stack {
@@ -37,8 +37,8 @@ export class RDSStack extends Stack {
     const rdsInstanceType = InstanceType.of(InstanceClass.M5, InstanceSize.LARGE);
     const pwdId = `rds-password-${props.stage}`;
 
-    if(props.primaryRdsInstance && props.primaryRdsPassword) {
-      this.rdsPassword = Secret.fromSecretNameV2(this, pwdId, props.primaryRdsPassword.secretName);
+    if(props.primaryRdsInstance && props.primaryRdsPasswordName) {
+      this.rdsPassword = Secret.fromSecretNameV2(this, pwdId, props.primaryRdsPasswordName);
       this.postgresRDSInstance = new DatabaseInstanceReadReplica(this, dbId, {
         instanceIdentifier: dbId,
         sourceDatabaseInstance: props.primaryRdsInstance,
