@@ -16,7 +16,7 @@ export interface RDSStackProps extends StackProps {
   securityGroup: SecurityGroup, 
   stage: string,
   primaryRdsInstance?: IDatabaseInstance,
-  primaryRdsPassword?: string
+  primaryRdsPassword?: ISecret
 }
 
 export class RDSStack extends Stack {
@@ -28,16 +28,17 @@ export class RDSStack extends Stack {
   readonly rdsDbUser: string = process.env.TYPEORM_USERNAME || "serverless";
   readonly rdsDbName: string = process.env.TYPEORM_DATABASE || "awsmeetupgroup";
   readonly rdsPort: number = 5432;
-  readonly rdsPassword: string;
+  readonly rdsPassword: ISecret;
   
   constructor(scope: Construct, id: string, props: RDSStackProps) {
     super(scope, id, props);
     
     const dbId = `postgres-rds-instance-${props.stage}`;
     const rdsInstanceType = InstanceType.of(InstanceClass.M5, InstanceSize.LARGE);
-    
+    const pwdId = `rds-password-${props.stage}`;
+
     if(props.primaryRdsInstance && props.primaryRdsPassword) {
-      this.rdsPassword = props.primaryRdsPassword;
+      this.rdsPassword = Secret.fromSecretNameV2(this, pwdId, props.primaryRdsPassword.secretName);
       this.postgresRDSInstance = new DatabaseInstanceReadReplica(this, dbId, {
         instanceIdentifier: dbId,
         sourceDatabaseInstance: props.primaryRdsInstance,
@@ -50,9 +51,9 @@ export class RDSStack extends Stack {
         port: this.rdsPort,
       });
     } else {
-      const pwdId = `rds-password-${props.stage}`;
-      const rdsPwd = new Secret(this, pwdId, {
+      this.rdsPassword = new Secret(this, pwdId, {
         secretName: pwdId,
+        replicaRegions: [{region: "us-east-1"}],
         generateSecretString: {
           excludeCharacters: `/@" `,
           excludePunctuation: true,
@@ -63,7 +64,6 @@ export class RDSStack extends Stack {
           passwordLength: 24
         }
       });
-      this.rdsPassword = rdsPwd.secretValue.toString();
       this.postgresRDSInstance = new DatabaseInstance(this, dbId,
         {
           instanceIdentifier: dbId,
@@ -74,7 +74,7 @@ export class RDSStack extends Stack {
           vpc: props.vpc,
           credentials: {
             username: this.rdsDbUser,
-            password: rdsPwd.secretValue,
+            password: this.rdsPassword.secretValue,
           },
           securityGroups: [props.securityGroup],
           vpcPlacement: { subnetType: SubnetType.ISOLATED },

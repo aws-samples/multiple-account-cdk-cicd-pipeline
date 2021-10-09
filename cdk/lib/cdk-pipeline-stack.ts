@@ -9,7 +9,7 @@ import { ISecret } from "@aws-cdk/aws-secretsmanager";
 
 export interface AppStageProps extends StageProps {
   primaryRdsInstance?: IDatabaseInstance,
-  primaryRdsPassword?: string
+  primaryRdsPassword?: ISecret
 }
 
 class AppStage extends Stage {
