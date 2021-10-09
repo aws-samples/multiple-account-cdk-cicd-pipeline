@@ -95,7 +95,7 @@ export class CdkPipelineStack extends Stack {
     pipeline.addStage(devStage);
     
     
-    const prdWave = pipeline.addWave("prd");
+    // const prdWave = pipeline.addWave("prd");
     const prdStagePrimary = new AppStage(this, "prd-primary", {
       env: { account: crossAccountId, region: "us-west-2" }
     });
@@ -105,8 +105,8 @@ export class CdkPipelineStack extends Stack {
       primaryRdsPasswordName: "rds-password-prd-primary"
     });
     
-    prdWave.addStage(prdStagePrimary);
-    prdWave.addStage(prdStageBackup);
+    pipeline.addStage(prdStagePrimary);
+    pipeline.addStage(prdStageBackup);
     
     this.apiPath = devStage.apiStack.apiPathOutput;
     this.rdsEndpoint = devStage.rdsStack.rdsEndpointOutput;
