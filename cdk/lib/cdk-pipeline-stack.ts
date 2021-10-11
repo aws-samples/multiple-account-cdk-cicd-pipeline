@@ -9,7 +9,8 @@ import { ISecret } from "@aws-cdk/aws-secretsmanager";
 
 export interface AppStageProps extends StageProps {
   primaryRdsInstance?: IDatabaseInstance,
-  primaryRdsPasswordArn?: string
+  primaryRdsPasswordArn?: string,
+  secretReplicationRegions?: string[]
 }
 
 class AppStage extends Stage {
@@ -25,8 +26,9 @@ class AppStage extends Stage {
       vpc: vpcStack.vpc,
       securityGroup: vpcStack.ingressSecurityGroup,
       stage: id,
+      secretReplicationRegions: props?.secretReplicationRegions || [],
       primaryRdsInstance: props?.primaryRdsInstance,
-      primaryRdsPasswordArn: props?.primaryRdsPasswordArn
+      primaryRdsPassword: props?.primaryRdsPasswordArn
     });
 
     this.apiStack = new GraphqlApiStack(this, "APIStack", {
@@ -37,18 +39,12 @@ class AppStage extends Stage {
       rdsDbUser: this.rdsStack.rdsDbUser,
       rdsDbName: this.rdsStack.rdsDbName,
       rdsPort: this.rdsStack.rdsPort,
-      rdsPassword: this.rdsStack.rdsPassword
+      rdsPassword: this.rdsStack.rdsDatabasePassword.value
     });
   }
 }
 
 export class CdkPipelineStack extends Stack {
-  public readonly apiPath: CfnOutput;
-  public readonly rdsEndpoint: CfnOutput;
-  public readonly rdsUsername: CfnOutput;
-  public readonly rdsDatabase: CfnOutput;
-  public readonly pipelineRole: CfnOutput;
-
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -56,9 +52,7 @@ export class CdkPipelineStack extends Stack {
     const githubRepo = process.env.GITHUB_REPO || "awsmug-serverless-graphql-api";
     const githubBranch = process.env.GITHUB_REPO || "master";
     const crossAccountId = process.env.SECONDARY_ACCOUNT_ID || "";
-    // const crossAccountRole = process.env.CROSS_ACCOUNT_PIPELINE_ROLE || "OrganizationAccountAccessRole";
-    
-
+  
     const pipeline = new CodePipeline(this, "Pipeline", {
       crossAccountKeys: true,
       pipelineName: "AWSMugPipeline",
@@ -72,51 +66,29 @@ export class CdkPipelineStack extends Stack {
       }),
     });
 
-    
-    
-    // const policy = new Policy(this, "crossAccountPolicy");
-    // policy.addStatements(new PolicyStatement({
-    //   effect: Effect.ALLOW,
-    //   actions: ["sts:AssumeRole"],
-    //   resources: [`arn:aws:iam::${crossAccountId}:role/${crossAccountRole}`]
-    // }));
-    // pipeline.pipeline.role.attachInlinePolicy(policy);
+  const primaryRegion = "us-west-2";
+  const secondaryRegion = "us-east-1";
 
-    // pipeline.pipeline.addToRolePolicy(new PolicyStatement({
-    //   effect: Effect.ALLOW,
-    //   actions: ["sts:AssumeRole"],
-    //   resources: [`arn:aws:iam::${crossAccountRole}:role/${crossAccountRole}`]
-    // }));
+  const prdStagePrimary = new AppStage(this, "prd-primary", {
+    env: { account: crossAccountId, region: primaryRegion },
+    secretReplicationRegions: [secondaryRegion]
+  });
 
-    const devStage = new AppStage(this, "dev", {
-      env: { account: Aws.ACCOUNT_ID, region: Aws.REGION }
-    });
-    pipeline.addStage(devStage);
-    
-    
-    // const prdWave = pipeline.addWave("prd");
-    const prdStagePrimary = new AppStage(this, "prd-primary", {
-      env: { account: crossAccountId, region: "us-west-2" }
-    });
+  const replicatedSecretArn = prdStagePrimary.rdsStack.rdsDatabasePassword.value.replace(primaryRegion, secondaryRegion);
+  console.log(`secret arn: ${replicatedSecretArn}`);
+  const prdStageBackup = new AppStage(this, "prd-backup", {
+    env: { account: crossAccountId, region: secondaryRegion },
+    primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance,
+    primaryRdsPasswordArn: replicatedSecretArn,
+  });
+  
+  pipeline.addStage(prdStagePrimary);
+  pipeline.addStage(prdStageBackup);
 
-    const replicatedSecretArn = prdStagePrimary.rdsStack.rdsPasswordArn.replace("us-west-2", "us-east-1");
-    console.log(`secret arn: ${replicatedSecretArn}`);
-    const prdStageBackup = new AppStage(this, "prd-backup", {
-      env: { account: crossAccountId, region: "us-east-1" },
-      primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance,
-      primaryRdsPasswordArn: replicatedSecretArn
-    });
-    
-    pipeline.addStage(prdStagePrimary);
-    pipeline.addStage(prdStageBackup);
-    
-    this.apiPath = devStage.apiStack.apiPathOutput;
-    this.rdsEndpoint = devStage.rdsStack.rdsEndpointOutput;
-    this.rdsUsername = devStage.rdsStack.rdsUsernameOutput;
-    this.rdsDatabase = devStage.rdsStack.rdsDatabaseOutput;
-    // this.pipelineRole = new CfnOutput(this, "pipelineRole", {
-    //   value: pipeline.pipeline.role.roleName,
-    //   description: "Name of IAM Role assumed by pipeline"
-    // });
+  const devStage = new AppStage(this, "dev", {
+    env: { account: Aws.ACCOUNT_ID, region: primaryRegion }
+  });
+  pipeline.addStage(devStage);
+
   }
 }

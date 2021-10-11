@@ -15,21 +15,22 @@ export interface RDSStackProps extends StackProps {
   vpc: Vpc;
   securityGroup: SecurityGroup, 
   stage: string,
+  secretReplicationRegions: string[],
   primaryRdsInstance?: IDatabaseInstance,
-  primaryRdsPasswordArn?: string
+  primaryRdsPassword?: string
 }
 
 export class RDSStack extends Stack {
   public readonly rdsEndpointOutput: CfnOutput;
   public readonly rdsUsernameOutput: CfnOutput;
   public readonly rdsDatabaseOutput: CfnOutput;
-
+  public readonly rdsDatabasePassword: CfnOutput;
+  
   readonly postgresRDSInstance: IDatabaseInstance;
   readonly rdsDbUser: string = process.env.TYPEORM_USERNAME || "serverless";
   readonly rdsDbName: string = process.env.TYPEORM_DATABASE || "awsmeetupgroup";
   readonly rdsPort: number = 5432;
-  readonly rdsPassword: ISecret;
-  readonly rdsPasswordArn: string;
+  private readonly rdsPassword: string;
   
   constructor(scope: Construct, id: string, props: RDSStackProps) {
     super(scope, id, props);
@@ -38,8 +39,8 @@ export class RDSStack extends Stack {
     const rdsInstanceType = InstanceType.of(InstanceClass.M5, InstanceSize.LARGE);
     const pwdId = `rds-password-${props.stage}`;
 
-    if(props.primaryRdsInstance && props.primaryRdsPasswordArn) {
-      this.rdsPassword = Secret.fromSecretCompleteArn(this, pwdId, props.primaryRdsPasswordArn);
+    if(props.primaryRdsInstance && props.primaryRdsPassword) {
+      this.rdsPassword = props.primaryRdsPassword;
       this.postgresRDSInstance = new DatabaseInstanceReadReplica(this, dbId, {
         instanceIdentifier: dbId,
         sourceDatabaseInstance: props.primaryRdsInstance,
@@ -52,9 +53,9 @@ export class RDSStack extends Stack {
         port: this.rdsPort,
       });
     } else {
-      this.rdsPassword = new Secret(this, pwdId, {
+      const rdsPasswordSecret = new Secret(this, pwdId, {
         secretName: pwdId,
-        replicaRegions: [{region: "us-east-1"}],
+        replicaRegions: props.secretReplicationRegions.map(x => {return {region: x}}),
         generateSecretString: {
           excludeCharacters: `/@" `,
           excludePunctuation: true,
@@ -65,7 +66,7 @@ export class RDSStack extends Stack {
           passwordLength: 24
         }
       });
-      this.rdsPasswordArn = this.rdsPassword.secretFullArn || this.rdsPassword.secretArn;
+      this.rdsPassword = rdsPasswordSecret.secretValue.toString();
       this.postgresRDSInstance = new DatabaseInstance(this, dbId,
         {
           instanceIdentifier: dbId,
@@ -76,7 +77,7 @@ export class RDSStack extends Stack {
           vpc: props.vpc,
           credentials: {
             username: this.rdsDbUser,
-            password: this.rdsPassword.secretValue,
+            password: rdsPasswordSecret.secretValue,
           },
           securityGroups: [props.securityGroup],
           vpcPlacement: { subnetType: SubnetType.ISOLATED },
@@ -88,7 +89,12 @@ export class RDSStack extends Stack {
         }
       );
     }
-    
+
+
+    this.rdsDatabasePassword = new CfnOutput(this, "rdsDatabasePassword", {
+      value: this.rdsPassword,
+      description: "RDS instance password"
+    });
 
     this.rdsEndpointOutput = new CfnOutput(this, "rdsEndpoint", {
       value: this.postgresRDSInstance.instanceEndpoint.socketAddress,
