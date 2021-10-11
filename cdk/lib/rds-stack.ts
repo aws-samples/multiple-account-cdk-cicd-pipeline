@@ -69,7 +69,7 @@ export class RDSStack extends Stack {
           instanceIdentifier: dbId,
           instanceType: rdsInstanceType,
           engine: DatabaseInstanceEngine.postgres({
-            version: PostgresEngineVersion.VER_10_15,
+            version: PostgresEngineVersion.VER_10_17,
           }),
           vpc: props.vpc,
           credentials: {
