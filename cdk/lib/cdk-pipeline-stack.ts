@@ -9,7 +9,7 @@ import { ISecret } from "@aws-cdk/aws-secretsmanager";
 
 export interface AppStageProps extends StageProps {
   primaryRdsInstance?: IDatabaseInstance,
-  primaryRdsPasswordArn?: string,
+  primaryRdsPassword?: string,
   secretReplicationRegions?: string[]
 }
 
@@ -28,7 +28,7 @@ class AppStage extends Stage {
       stage: id,
       secretReplicationRegions: props?.secretReplicationRegions || [],
       primaryRdsInstance: props?.primaryRdsInstance,
-      primaryRdsPassword: props?.primaryRdsPasswordArn
+      primaryRdsPassword: props?.primaryRdsPassword
     });
 
     this.apiStack = new GraphqlApiStack(this, "APIStack", {
@@ -74,12 +74,10 @@ export class CdkPipelineStack extends Stack {
     secretReplicationRegions: [secondaryRegion]
   });
 
-  const replicatedSecretArn = prdStagePrimary.rdsStack.rdsDatabasePassword.value.replace(primaryRegion, secondaryRegion);
-  console.log(`secret arn: ${replicatedSecretArn}`);
   const prdStageBackup = new AppStage(this, "prd-backup", {
     env: { account: crossAccountId, region: secondaryRegion },
     primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance,
-    primaryRdsPasswordArn: replicatedSecretArn,
+    primaryRdsPassword: prdStagePrimary.rdsStack.rdsDatabasePassword.value,
   });
   
   pipeline.addStage(prdStagePrimary);
