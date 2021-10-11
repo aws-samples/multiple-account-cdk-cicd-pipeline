@@ -37,7 +37,7 @@ class AppStage extends Stage {
       rdsDbUser: this.rdsStack.rdsDbUser,
       rdsDbName: this.rdsStack.rdsDbName,
       rdsPort: this.rdsStack.rdsPort,
-      rdsPasswordSecretName: this.rdsStack.rdsDatabasePasswordSecretName.value
+      rdsPasswordSecretName: this.rdsStack.rdsDatabasePasswordSecretName.value,
     });
   }
 }

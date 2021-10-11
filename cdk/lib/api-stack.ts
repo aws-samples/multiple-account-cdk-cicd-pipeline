@@ -22,7 +22,7 @@ export class GraphqlApiStack extends Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const dbPwdSecret = Secret.fromSecretNameV2(scope, "dbPwdSecret", props.rdsPasswordSecretName);
+    const dbPwdSecret = Secret.fromSecretNameV2(this, "dbPwdSecret", props.rdsPasswordSecretName);
     const handler = new Function(this, "graphql", {
       runtime: Runtime.NODEJS_14_X,
       code: Code.fromAsset("api"),
