@@ -9,7 +9,6 @@ import { ISecret } from "@aws-cdk/aws-secretsmanager";
 
 export interface AppStageProps extends StageProps {
   primaryRdsInstance?: IDatabaseInstance,
-  primaryRdsPassword?: string,
   secretReplicationRegions?: string[]
 }
 
@@ -27,8 +26,7 @@ class AppStage extends Stage {
       securityGroup: vpcStack.ingressSecurityGroup,
       stage: id,
       secretReplicationRegions: props?.secretReplicationRegions || [],
-      primaryRdsInstance: props?.primaryRdsInstance,
-      primaryRdsPassword: props?.primaryRdsPassword
+      primaryRdsInstance: props?.primaryRdsInstance
     });
 
     this.apiStack = new GraphqlApiStack(this, "APIStack", {
@@ -39,7 +37,7 @@ class AppStage extends Stage {
       rdsDbUser: this.rdsStack.rdsDbUser,
       rdsDbName: this.rdsStack.rdsDbName,
       rdsPort: this.rdsStack.rdsPort,
-      rdsPassword: this.rdsStack.rdsDatabasePassword.value
+      rdsPasswordSecretName: this.rdsStack.rdsDatabasePasswordSecretName.value
     });
   }
 }
@@ -76,8 +74,7 @@ export class CdkPipelineStack extends Stack {
 
   const prdStageBackup = new AppStage(this, "prd-backup", {
     env: { account: crossAccountId, region: secondaryRegion },
-    primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance,
-    primaryRdsPassword: prdStagePrimary.rdsStack.rdsDatabasePassword.value,
+    primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance
   });
   
   pipeline.addStage(prdStagePrimary);

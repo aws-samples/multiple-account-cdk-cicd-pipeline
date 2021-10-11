@@ -27,5 +27,5 @@ new GraphqlApiStack(app, "APIStack", {
   rdsDbUser: rdsStack.rdsDbUser,
   rdsDbName: rdsStack.rdsDbName,
   rdsPort: rdsStack.rdsPort,
-  rdsPassword: rdsStack.rdsDatabasePassword.value
+  rdsPasswordSecretName: rdsStack.rdsDatabasePasswordSecretName.value
 });

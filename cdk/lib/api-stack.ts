@@ -3,7 +3,7 @@ import { Stack, StackProps, Construct, CfnOutput } from "@aws-cdk/core";
 import { LambdaRestApi } from "@aws-cdk/aws-apigateway";
 import { Function, Runtime, Code } from "@aws-cdk/aws-lambda";
 import { Vpc, SecurityGroup, SubnetType } from "@aws-cdk/aws-ec2";
-import { ISecret } from "@aws-cdk/aws-secretsmanager";
+import { Secret } from "@aws-cdk/aws-secretsmanager";
 
 
 export interface LambdaStackProps extends StackProps {
@@ -13,7 +13,7 @@ export interface LambdaStackProps extends StackProps {
   rdsDbUser: string;
   rdsDbName: string;
   rdsPort: number;
-  rdsPassword: string;
+  rdsPasswordSecretName: string;
 }
 
 export class GraphqlApiStack extends Stack {
@@ -22,6 +22,7 @@ export class GraphqlApiStack extends Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
+    const dbPwdSecret = Secret.fromSecretNameV2(scope, "dbPwdSecret", props.rdsPasswordSecretName);
     const handler = new Function(this, "graphql", {
       runtime: Runtime.NODEJS_14_X,
       code: Code.fromAsset("api"),
@@ -40,7 +41,7 @@ export class GraphqlApiStack extends Stack {
         TYPEORM_HOST: props.rdsEndpoint,
         TYPEORM_DATABASE: props.rdsDbName,
         TYPEORM_PORT: props.rdsPort.toString(),
-        TYPEORM_PASSWORD: props.rdsPassword,
+        TYPEORM_PASSWORD: dbPwdSecret.secretValue.toString(),
         TYPEORM_SYNCHRONIZE: "true",
         TYPEORM_LOGGING: "true",
         TYPEORM_ENTITIES: "./build/src/entity/*.entity.js",
