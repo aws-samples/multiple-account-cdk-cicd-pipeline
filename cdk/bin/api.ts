@@ -14,7 +14,8 @@ const vpcStack = new VpcStack(app, "VPCStack");
 const rdsStack = new RDSStack(app, "RDSStack", {
   vpc: vpcStack.vpc,
   securityGroup: vpcStack.ingressSecurityGroup,
-  stage: "standalone"
+  stage: "standalone",
+  secretReplicationRegions: []
 });
 
 // Serverless Lambda/API Gateway Graphql API
@@ -26,5 +27,5 @@ new GraphqlApiStack(app, "APIStack", {
   rdsDbUser: rdsStack.rdsDbUser,
   rdsDbName: rdsStack.rdsDbName,
   rdsPort: rdsStack.rdsPort,
-  rdsPasswordArn: rdsStack.rdsPassword
+  rdsPassword: rdsStack.rdsDatabasePassword.value
 });
