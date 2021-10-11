@@ -1,5 +1,5 @@
 import { CfnOutput, Construct, Stage, StageProps, Stack, StackProps, Aws } from "@aws-cdk/core";
-import { CodePipeline, CodePipelineSource, ShellStep } from "@aws-cdk/pipelines";
+import { CodePipeline, CodePipelineSource, ShellStep, Wave } from "@aws-cdk/pipelines";
 import { PolicyDocument, PolicyStatement, Effect, Policy } from "@aws-cdk/aws-iam";
 import { GraphqlApiStack } from "./api-stack";
 import { VpcStack } from "./vpc-stack";
@@ -49,8 +49,12 @@ export class CdkPipelineStack extends Stack {
     const githubOrg = process.env.GITHUB_ORG || "kevasync";
     const githubRepo = process.env.GITHUB_REPO || "awsmug-serverless-graphql-api";
     const githubBranch = process.env.GITHUB_REPO || "master";
-    const crossAccountId = process.env.SECONDARY_ACCOUNT_ID || "";
-  
+    const devAccountId = process.env.DEV_ACCOUNT_ID || "";
+    const stgAccountId = process.env.STG_ACCOUNT_ID || "";
+    const prdAccountId = process.env.PRD_ACCOUNT_ID || "";
+    const primaryRegion = process.env.PRIMARY_REGION || "us-west-2";
+    const secondaryRegion = process.env.SECONDARY_REGION || "us-east-1";
+
     const pipeline = new CodePipeline(this, "Pipeline", {
       crossAccountKeys: true,
       pipelineName: "AWSMugPipeline",
@@ -63,27 +67,46 @@ export class CdkPipelineStack extends Stack {
         ]
       }),
     });
+    
+    const devWave = new Wave("DEV/QA Deployments");
+    const primaryRegionWave = new Wave("Primary DB Region Deployments");
+    const secondaryRegionWave = new Wave("Secondary DB Region Deployments");
+    
+    const devStage = new AppStage(this, "dev", {
+      env: { account: devAccountId, region: primaryRegion }
+    });
 
-  const primaryRegion = "us-west-2";
-  const secondaryRegion = "us-east-1";
+    const qaStage = new AppStage(this, "qa", {
+      env: { account: devAccountId, region: secondaryRegion }
+    });
 
-  const prdStagePrimary = new AppStage(this, "prd-primary", {
-    env: { account: crossAccountId, region: primaryRegion },
-    secretReplicationRegions: [secondaryRegion]
-  });
+    const stgStagePrimary = new AppStage(this, "stg-primary", {
+      env: { account: stgAccountId, region: primaryRegion },
+      secretReplicationRegions: [secondaryRegion]
+    });
 
-  const prdStageBackup = new AppStage(this, "prd-backup", {
-    env: { account: crossAccountId, region: secondaryRegion },
-    primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance
-  });
-  
-  pipeline.addStage(prdStagePrimary);
-  pipeline.addStage(prdStageBackup);
+    const stgStageBackup = new AppStage(this, "stg-backup", {
+      env: { account: stgAccountId, region: secondaryRegion },
+      primaryRdsInstance: stgStagePrimary.rdsStack.postgresRDSInstance
+    });
 
-  const devStage = new AppStage(this, "dev", {
-    env: { account: Aws.ACCOUNT_ID, region: primaryRegion }
-  });
-  pipeline.addStage(devStage);
+    const prdStagePrimary = new AppStage(this, "prd-primary", {
+      env: { account: prdAccountId, region: primaryRegion },
+      secretReplicationRegions: [secondaryRegion]
+    });
 
+    const prdStageBackup = new AppStage(this, "prd-backup", {
+      env: { account: prdAccountId, region: secondaryRegion },
+      primaryRdsInstance: prdStagePrimary.rdsStack.postgresRDSInstance
+    });
+    
+    devWave.addStage(devStage);
+    devWave.addStage(qaStage);
+    
+    primaryRegionWave.addStage(stgStagePrimary);
+    primaryRegionWave.addStage(prdStagePrimary);
+
+    secondaryRegionWave.addStage(stgStageBackup);
+    secondaryRegionWave.addStage(prdStageBackup);
   }
 }

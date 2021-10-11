@@ -51,3 +51,39 @@ Set Env Var `` in CodeBuild step
 In source account, add ability to assume cdk roles created by bootstrap command to policy used for cross account access
 In source account, add policy to role used to build and deploy that was created when the pipeline was deployed
 Create ssm param `rds-password-secret-arn` for arn to secret manager entry with db pwd secret (In account 1)
+
+### Cross account access
+* Create role trusting pipeline account w/ built-in admin access policy attached to it called `OrganizationAccountAccessRole` and the following definition:
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::<PipelineAccount>:root"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {}
+    }
+  ]
+}
+
+* In pipeline account, add the following policy to the role your user is associated with for each account:
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Resource": "arn:aws:iam::<DeploymentTargetAccount>:role/OrganizationAccountAccessRole"
+        },
+        {
+            "Sid": "VisualEditor1",
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Resource": "arn:aws:iam::<DeploymentTargetAccount>:role/<CDKRolePrefix>*"
+        }
+    ]
+}
