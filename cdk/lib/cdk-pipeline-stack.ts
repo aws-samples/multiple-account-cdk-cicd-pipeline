@@ -78,17 +78,17 @@ export class CdkPipelineStack extends Stack {
     devQaWave.addStage(dev);
     // devQaWave.addStage(qa);
 
-    // const primaryRdsRegionWave = pipeline.addWave("Primary DB Region Deployments");
-    // const stgPrimary = new AppStage(this, "stg-primary", {
-    //   env: { account: stgAccountId, region: primaryRegion },
-    //   secretReplicationRegions: [secondaryRegion]
-    // });
-    // const prdPrimary = new AppStage(this, "prd-primary", {
-    //   env: { account: prdAccountId, region: primaryRegion },
-    //   secretReplicationRegions: [secondaryRegion]
-    // });
-    // primaryRdsRegionWave.addStage(stgPrimary);
-    // primaryRdsRegionWave.addStage(prdPrimary);
+    const primaryRdsRegionWave = pipeline.addWave("Primary DB Region Deployments");
+    const stgPrimary = new AppStage(this, "stg-primary", {
+      env: { account: stgAccountId, region: primaryRegion },
+      secretReplicationRegions: [secondaryRegion]
+    });
+    const prdPrimary = new AppStage(this, "prd-primary", {
+      env: { account: prdAccountId, region: primaryRegion },
+      secretReplicationRegions: [secondaryRegion]
+    });
+    primaryRdsRegionWave.addStage(stgPrimary);
+    primaryRdsRegionWave.addStage(prdPrimary);
     
     // const secondaryRdsRegionWave = pipeline.addWave("Secondary DB Region Deployments");
     // const stgBackup = new AppStage(this, "stg-backup", {
