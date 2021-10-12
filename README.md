@@ -46,12 +46,14 @@ export GITHUB_REPO=YOUR_GITHUB_BRANCH
 cdk bootstrap --trust $PIPELINE_ACCOUNT_ID --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess aws://$SECONDRY_ACCOUNT_ID/$SECONDARY_REGION
 ```
 
-Deploy pipeline manually one time: `cdk deploy`
+Deploy pipeline manually one time: `cdk deploy CdkPipelineStack`
+
 Cacnel execution of pipeline
-Set Env Var `` in CodeBuild step
+Set Env Vars:
+in CodeBuild step add the following: `DEV_ACCOUNT_ID`, `STG_ACCOUNT_ID`, and `PRD_ACCOUNT_ID`
 In source account, add ability to assume cdk roles created by bootstrap command to policy used for cross account access
 In source account, add policy to role used to build and deploy that was created when the pipeline was deployed
-Create ssm param `rds-password-secret-arn` for arn to secret manager entry with db pwd secret (In account 1)
+
 
 ### Cross account access
 * Create role trusting pipeline account w/ built-in admin access policy attached to it called `OrganizationAccountAccessRole` and the following definition:
