@@ -68,39 +68,39 @@ export class CdkPipelineStack extends Stack {
       }),
     });
     
-    const devQaWave = new Wave("DEV and QA Deployments");
+    const devQaWave = pipeline.addWave("DEV and QA Deployments");
     const dev = new AppStage(this, "dev", {
       env: { account: devAccountId, region: primaryRegion }
     });
-    // const qa = new AppStage(this, "qa", {
-    //   env: { account: devAccountId, region: secondaryRegion }
-    // });
+    const qa = new AppStage(this, "qa", {
+      env: { account: devAccountId, region: secondaryRegion }
+    });
     devQaWave.addStage(dev);
-    // devQaWave.addStage(qa);
+    devQaWave.addStage(qa);
 
-    // const primaryRdsRegionWave = new Wave("Primary DB Region Deployments");
-    // const stgPrimary = new AppStage(this, "stg-primary", {
-    //   env: { account: stgAccountId, region: primaryRegion },
-    //   secretReplicationRegions: [secondaryRegion]
-    // });
-    // const prdPrimary = new AppStage(this, "prd-primary", {
-    //   env: { account: prdAccountId, region: primaryRegion },
-    //   secretReplicationRegions: [secondaryRegion]
-    // });
-    // primaryRdsRegionWave.addStage(stgPrimary);
-    // primaryRdsRegionWave.addStage(prdPrimary);
+    const primaryRdsRegionWave = pipeline.addWave("Primary DB Region Deployments");
+    const stgPrimary = new AppStage(this, "stg-primary", {
+      env: { account: stgAccountId, region: primaryRegion },
+      secretReplicationRegions: [secondaryRegion]
+    });
+    const prdPrimary = new AppStage(this, "prd-primary", {
+      env: { account: prdAccountId, region: primaryRegion },
+      secretReplicationRegions: [secondaryRegion]
+    });
+    primaryRdsRegionWave.addStage(stgPrimary);
+    primaryRdsRegionWave.addStage(prdPrimary);
     
-    // const secondaryRdsRegionWave = new Wave("Secondary DB Region Deployments");
-    // const stgBackup = new AppStage(this, "stg-backup", {
-    //   env: { account: stgAccountId, region: secondaryRegion },
-    //   primaryRdsInstance: stgPrimary.rdsStack.postgresRDSInstance
-    // });
-    // const prdBackup = new AppStage(this, "prd-backup", {
-    //   env: { account: prdAccountId, region: secondaryRegion },
-    //   primaryRdsInstance: prdPrimary.rdsStack.postgresRDSInstance
-    // });
+    const secondaryRdsRegionWave = pipeline.addWave("Secondary DB Region Deployments");
+    const stgBackup = new AppStage(this, "stg-backup", {
+      env: { account: stgAccountId, region: secondaryRegion },
+      primaryRdsInstance: stgPrimary.rdsStack.postgresRDSInstance
+    });
+    const prdBackup = new AppStage(this, "prd-backup", {
+      env: { account: prdAccountId, region: secondaryRegion },
+      primaryRdsInstance: prdPrimary.rdsStack.postgresRDSInstance
+    });
 
-    // secondaryRdsRegionWave.addStage(stgBackup);
-    // secondaryRdsRegionWave.addStage(prdBackup);
+    secondaryRdsRegionWave.addStage(stgBackup);
+    secondaryRdsRegionWave.addStage(prdBackup);
   }
 }
