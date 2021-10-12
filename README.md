@@ -42,9 +42,10 @@ export GITHUB_REPO=YOUR_GITHUB_BRANCH
 
 
 
+```
+cdk bootstrap --trust $PIPELINE_ACCOUNT_ID --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess aws://$SECONDRY_ACCOUNT_ID/$SECONDARY_REGION
+```
 
-`aws iam attach-role-policy --role-name $PIPELINE_ROLE  --policy-arn $POLICY_ARN`
-`cdk bootstrap --trust $PIPELINE_ACCOUNT_ID --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess aws://$SECONDRY_ACCOUNT_ID/$SECONDARY_REGION`
 Deploy pipeline manually one time: `cdk deploy`
 Cacnel execution of pipeline
 Set Env Var `` in CodeBuild step
