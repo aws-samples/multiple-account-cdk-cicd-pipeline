@@ -1,11 +1,10 @@
-import { CfnOutput, Construct, Stage, StageProps, Stack, StackProps, Aws } from "@aws-cdk/core";
-import { CodePipeline, CodePipelineSource, ShellStep, Wave } from "@aws-cdk/pipelines";
-import { PolicyDocument, PolicyStatement, Effect, Policy } from "@aws-cdk/aws-iam";
+import { Construct, Stage, StageProps, Stack, StackProps, Aws } from "@aws-cdk/core";
+import { CodePipeline, CodePipelineSource, ManualApprovalStep, ShellStep, Wave } from "@aws-cdk/pipelines";
 import { GraphqlApiStack } from "./api-stack";
 import { VpcStack } from "./vpc-stack";
 import { RDSStack } from "./rds-stack";
 import { IDatabaseInstance } from "@aws-cdk/aws-rds";
-import { ISecret } from "@aws-cdk/aws-secretsmanager";
+
 
 export interface AppStageProps extends StageProps {
   primaryRdsInstance?: IDatabaseInstance,
@@ -72,13 +71,17 @@ export class CdkPipelineStack extends Stack {
     const dev = new AppStage(this, "dev", {
       env: { account: devAccountId, region: primaryRegion }
     });
+    
     const qa = new AppStage(this, "qa", {
       env: { account: devAccountId, region: secondaryRegion }
     });
+    
     devQaWave.addStage(dev);
     devQaWave.addStage(qa);
 
-    const primaryRdsRegionWave = pipeline.addWave("Primary-DB-Region-Deployments");
+    const primaryRdsRegionWave = pipeline.addWave("Primary-DB-Region-Deployments", {
+      pre: [new ManualApprovalStep("ProdManualApproval")]
+    });
     const stgPrimary = new AppStage(this, "stg-primary", {
       env: { account: stgAccountId, region: primaryRegion },
       secretReplicationRegions: [secondaryRegion]
