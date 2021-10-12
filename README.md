@@ -54,6 +54,7 @@ Create ssm param `rds-password-secret-arn` for arn to secret manager entry with 
 
 ### Cross account access
 * Create role trusting pipeline account w/ built-in admin access policy attached to it called `OrganizationAccountAccessRole` and the following definition:
+```
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -67,9 +68,9 @@ Create ssm param `rds-password-secret-arn` for arn to secret manager entry with 
     }
   ]
 }
-
+```
 * In pipeline account, add the following policy to the role your user is associated with for each account:
-
+```
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -87,3 +88,4 @@ Create ssm param `rds-password-secret-arn` for arn to secret manager entry with 
         }
     ]
 }
+```
