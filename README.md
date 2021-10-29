@@ -135,3 +135,12 @@ This allows each to be updated separately.
 You will need to go CloudFormation in each account/region and delete the stacks when you want to clean up the resources.
 
 Explore nested stacks if this behavior is not acceptable
+
+
+## Security
+
+See [CONTRIBUTING](CONTRIBUTING.md) for more information.
+
+## License
+
+This library is licensed under the MIT-0 License. See the [LICENSE](LICENSE) file.
