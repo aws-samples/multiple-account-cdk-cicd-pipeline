@@ -1,89 +1,137 @@
-# AWSMEETUPGROUP Serverless Graphql API
+# Build up CI/CD Pipeline with CDK - Multi Account/Region Deployments
 
-## Useful commands
+In this guide, we will introduce a way to build up CI/CD piplelines to realize services multi account/region deployments using CDK.
 
-- `npm run build` compile typescript to js
-- `npm run watch` watch for changes and compile
-- `npm run test` perform the jest unit tests
-- `cdk deploy` deploy this stack to your default AWS account/region
-- `cdk diff` compare deployed stack with current state
-- `cdk synth` emits the synthesized CloudFormation template
+&nbsp;
 
-export AWS_PROFILE=YOUR_PROFILE
-export CDK_DEFAULT_REGION=YOUR_REGION
-export CDK_DEFAULT_ACCOUNT=YOUR_ACCOUNT
+## Stack Architecture
 
-aws cloudformation package \
- --template-file template.yaml \
- --output-template-file serverless-output.yaml \
- --s3-bucket test-apollo-acl
+&nbsp;
 
-aws cloudformation deploy \
- --template-file serverless-output.yaml \
- --stack-name prod \
- --capabilities CAPABILITY_IAM
+Below in the graph shows the infrastructure architecture. The whole architecture spreads in four accounts. One account is for deploying pipeline whereas other three accounts are the service accounts for each of stages in development
 
-aws s3 mb s3://test-apollo-acl 
+![CI/CD Pipeline with CDK - Multi Account/Region Deployments Architecture](./images/architecture.png)
 
-aws secretsmanager create-secret --name rdsPassword --secret-string YOUR_PASSWORD
+&nbsp;
 
-npm i -g typeorm ts-node
+##  Cross Account Setup - Console (Optional)
+During the deployment, we will need to switch between four AWS accounts to check resources. To avoid the time spending on login and logout between account, instead, we will leverage roles to get access to different consoles. This step will facilitate us switch console by 1-click without logout and login.
 
-### CI/CD Pipeline commands
+1. In each of target accounts (prd, stg, dev), create a role `OrganizationAccountAccessRole` and configure it to trust pipeline account, and attach policy.
+   
+   ![organization_account_access_role](./images/organization_account_access_role.png)
 
-cdk bootstrap aws://ACCOUNTID/REGION --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess  
-aws secretsmanager create-secret --name github-token --description "Secret for GitHub" --secret-string "GITHUB_PERSONAL_ACCESS_TOKEN"
-aws ssm put-parameter --name rds-password-secret-arn --type String --value YOUR_SECRET_ARN
-export GITHUB_ORG=YOUR_GITHUB_ORG
-export GITHUB_REPO=YOUR_GITHUB_REPO
-export GITHUB_REPO=YOUR_GITHUB_BRANCH
+2. In pipeline account, create policies as below for each of the target account and attach to role you use that allows account. Repeat for all accounts.
+   
+   ![policy](./images/policy.png)
 
-*Note:* To deploy application without pipeline locally, change `cdk.json` line 2 from `"app": "npx ts-node --prefer-ts-exts cdk/bin/pipeline.ts",` to `"app": "npx ts-node --prefer-ts-exts cdk/bin/api.ts",` 
+3. Use switch role link in menu drop at top right of the console to switch between accounts.
+   
+   ![repeat](./images/repeat.png)  
+
+&nbsp;
+
+##  Regional CDK Bootstrapping
+
+Each account region combo that is deployed to must be bootstrapped. Since it is a cross-account deployment, a trust must be established during this process.
+
+Deploying AWS CDK apps into an AWS environment may require that you provision resources the AWS CDK needs to perform the deployment. These resources include an Amazon S3 bucket for storing files and IAM roles that grant permissions needed to perform deployments. The process of provisioning these initial resources is called bootstrapping. 
+
+1. For each target account/region run the following CLI command (Must be ran as user with appropriate privs in the target account):
+    ```
+    cdk bootstrap --trust <pipelineAccountId> --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess aws://<targetAccountId>/<targetRegion>
+    ```
+
+2. Given we are deploying to 2 regions in 3 different accounts, we must run this command 6 times
+
+&nbsp;
+
+##  Initial Deployment of Pipeline
+
+&nbsp;
+
+### Pipeline Overview
+
+`./cdk/bin/pipeline.ts`: Creation of CDK App for Pipeline
+
+`./cdk/lib/cdk-pipeline-stack.ts`: Definition of stacks to deploy, as well as environments to deploy to.
+
+&nbsp;
+
+### Github Access
+1. Create a github token [here](https://github.com/settings/tokens/). Set the permission as below
+ 
+   ![github_repo](./images/github_repo.png)
+
+2. In pipeline account/region, create Secret Manager secret to store access token for GitHub repo.  The token must stored as a plaintext secret with a name of `github-token`:
+   
+   ![github_token](./images/github_token.png)
+
+&nbsp;
+
+### Deploy Pipeline
+
+1. Clone the repo and run command. When prompted to create security groups/deploy, accept.
+   ```
+   cdk deploy CdkPipelineStack
+   ```
+
+2. Navigate to CodePipeline in Console and cancel the intial build.
+3. Set Env Vars in the Build step of the pipeline as below.
+
+    ![edit_env](./images/edit_env.png)
+
+    ![env_setting](./images/env_setting.png)
+
+&nbsp;
+
+### Configure Pipeline Role
+
+In pipeline account, create a Policy for each target account to allow Pipeline role to assume Roles created during bootstrap process
+
+1. Get CDK prefix from a target account
+   
+   ![prefix](./images/prefix.png)
+
+2. Create policy for all 3 accounts
+   
+   ![pipeline_policy](./images/pipeline_policy.png)
+
+3. Attach all 3 policies to the Pipeline Build role (Very similar to what we did for cross account access in console)
+   
+   ![attach_role](./images/attach_role.png)
+
+&nbsp;
+
+### Run Pipeline
+Navigate to Pipeline and Release Changes, app resources will be deployed in three accounts and two regions in each account.
+
+Waves can be used to deploy multiple stages in parrallel. In this example:
+- DEV and QA
+- PRD and STG Primary 
+- PRD and STG Secondary 
 
 
+![release_change](./images/release_change.png)
 
+&nbsp;
 
-`aws iam attach-role-policy --role-name $PIPELINE_ROLE  --policy-arn $POLICY_ARN`
-`cdk bootstrap --trust $PIPELINE_ACCOUNT_ID --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess aws://$SECONDRY_ACCOUNT_ID/$SECONDARY_REGION`
-Deploy pipeline manually one time: `cdk deploy`
-Cacnel execution of pipeline
-Set Env Var `` in CodeBuild step
-In source account, add ability to assume cdk roles created by bootstrap command to policy used for cross account access
-In source account, add policy to role used to build and deploy that was created when the pipeline was deployed
-Create ssm param `rds-password-secret-arn` for arn to secret manager entry with db pwd secret (In account 1)
+## App Architecture
 
-### Cross account access
-* Create role trusting pipeline account w/ built-in admin access policy attached to it called `OrganizationAccountAccessRole` and the following definition:
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::<PipelineAccount>:root"
-      },
-      "Action": "sts:AssumeRole",
-      "Condition": {}
-    }
-  ]
-}
+App structure contains three stacks:
 
-* In pipeline account, add the following policy to the role your user is associated with for each account:
+- VPC: Core networking 
+- RDS: RDS Postgres Instance (or read replica in multi-region deployment)
+- API: Lambda w/ VPC attachment and API gateway 
 
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "VisualEditor0",
-            "Effect": "Allow",
-            "Action": "sts:AssumeRole",
-            "Resource": "arn:aws:iam::<DeploymentTargetAccount>:role/OrganizationAccountAccessRole"
-        },
-        {
-            "Sid": "VisualEditor1",
-            "Effect": "Allow",
-            "Action": "sts:AssumeRole",
-            "Resource": "arn:aws:iam::<DeploymentTargetAccount>:role/<CDKRolePrefix>*"
-        }
-    ]
-}
+![multi_region_app](./images/multi_region_app.png)
+
+&nbsp;
+
+## Cleanup
+Each Stack (VPC, RDS, API) is deployed independently to each account/region
+This allows each to be updated separately.
+
+You will need to go CloudFormation in each account/region and delete the stacks when you want to clean up the resources.
+
+Explore nested stacks if this behavior is not acceptable

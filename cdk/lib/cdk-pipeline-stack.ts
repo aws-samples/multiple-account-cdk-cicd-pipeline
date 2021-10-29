@@ -47,7 +47,7 @@ export class CdkPipelineStack extends Stack {
 
     const githubOrg = process.env.GITHUB_ORG || "kevasync";
     const githubRepo = process.env.GITHUB_REPO || "awsmug-serverless-graphql-api";
-    const githubBranch = process.env.GITHUB_REPO || "master";
+    const githubBranch = process.env.GITHUB_BRANCH || "master";
     const devAccountId = process.env.DEV_ACCOUNT_ID || "";
     const stgAccountId = process.env.STG_ACCOUNT_ID || "";
     const prdAccountId = process.env.PRD_ACCOUNT_ID || "";
