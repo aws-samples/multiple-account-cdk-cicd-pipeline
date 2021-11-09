@@ -136,11 +136,10 @@ You will need to go CloudFormation in each account/region and delete the stacks 
 
 Explore nested stacks if this behavior is not acceptable
 
-
 ## Security
 
-See [CONTRIBUTING](CONTRIBUTING.md) for more information.
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
 ## License
 
-This library is licensed under the MIT-0 License. See the [LICENSE](LICENSE) file.
+This library is licensed under the MIT-0 License. See the LICENSE file.
