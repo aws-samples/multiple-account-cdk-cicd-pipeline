@@ -1,6 +1,6 @@
-# Build up CI/CD Pipeline with CDK - Multi Account/Region Deployments
+# Build CI/CD Pipelines with CDK - Multi Account/Region Deployments
 
-In this guide, we will introduce a way to build up CI/CD piplelines to realize services multi account/region deployments using CDK.
+In this sample we introduce a way to build CI/CD pipelines using the CDK to realize multi account/region deployments.  An example use case for this is deployment of software and infrastructure to multiple environments such as Development, QA, Staging, and Production.
 
 &nbsp;
 
@@ -8,27 +8,72 @@ In this guide, we will introduce a way to build up CI/CD piplelines to realize s
 
 &nbsp;
 
-Below in the graph shows the infrastructure architecture. The whole architecture spreads in four accounts. One account is for deploying pipeline whereas other three accounts are the service accounts for each of stages in development
+The following diagram shows the pipeline and target accounts’ regional architecture. The entire architecture spans four accounts. One account is for the deployment pipeline, and the other three accounts are the accounts that the application is deployed to:
 
 ![CI/CD Pipeline with CDK - Multi Account/Region Deployments Architecture](./images/architecture.png)
 
 &nbsp;
 
-##  Cross Account Setup - Console (Optional)
-During the deployment, we will need to switch between four AWS accounts to check resources. To avoid the time spending on login and logout between account, instead, we will leverage roles to get access to different consoles. This step will facilitate us switch console by 1-click without logout and login.
+##  Cross Account Console Setup - Console (Optional but recommended)
+During the deployment, we will need to switch between four AWS accounts to check resources. To avoid the time spent to log in and out of accounts, we will leverage roles to get access to different accounts in the console. This step will facilitate switching accounts in the console with 1-click.  The alternative to this approach would be to continuously log in and out of the accounts used by the pipeline, and the accounts the pipeline deploys to.
 
-1. In each of target accounts (prd, stg, dev), create a role `OrganizationAccountAccessRole` and configure it to trust pipeline account, and attach policy.
+1. In each of target accounts (prd, stg, dev), using the IAM (Identity and Access Management) service, create a role `OrganizationAccountAccessRole` and configure it to trust the pipeline account, attach policy, add tags, and confirm creation:
    
-   ![organization_account_access_role](./images/organization_account_access_role.png)
+   * Create role that trusts another AWS account and specify pipeline account ID:
+   ![create_trusted_role](./images/create_trusted_role.png)
 
-2. In pipeline account, create policies as below for each of the target account and attach to role you use that allows account. Repeat for all accounts.
+   * Specify policy to attach to trusted role (`AdministratorAccess` used as the pipeline needs to create resources and IAM entities):
+   ![attach_trusted_role_policy](./images/attach_trusted_role_policy.png)
    
-   ![policy](./images/policy.png)
+   * Review and create the role:
+   ![trusted_account_summary](./images/trusted_account_summary.png)
 
-3. Use switch role link in menu drop at top right of the console to switch between accounts.
+2. In the pipeline account, create a policy as below for each of the target accounts and attach to a role your account can access.
    
-   ![repeat](./images/repeat.png)  
+   * Policy template:
+   ```
+      {
+         "Version": "2012-10-17",
+         "Statement": [
+            {
+                  "Sid": "VisualEditor0",
+                  "Effect": "Allow",
+                  "Action": "sts:AssumeRole",
+                  "Resource": "arn:aws:iam::<devAccountId>:role/OrganizationAccountAccessRole"
+            },
+            {
+                  "Sid": "VisualEditor1",
+                  "Effect": "Allow",
+                  "Action": "sts:AssumeRole",
+                  "Resource": "arn:aws:iam::<stagingAccountId>:role/OrganizationAccountAccessRole"
+            },
+            {
+                  "Sid": "VisualEditor2",
+                  "Effect": "Allow",
+                  "Action": "sts:AssumeRole",
+                  "Resource": "arn:aws:iam::<productionAccountId>:role/OrganizationAccountAccessRole"
+            }
+         ]
+      }
+   ```
+   * Create IAM policy:
+   ![create_policy](./images/create_policy.png)
 
+   * Review and name IAM policy:
+   ![review_policy](./images/review_policy.png)
+
+   * Attach policy to role your user has access to:
+   ![attach_console_role](./images/attach_console_role.png)
+
+3. Use drop-down menu at top-right of the console to switch between accounts.
+   * Click the `Switch role` button:
+   ![switch_role_dropdown](./images/switch_role_dropdown.png)  
+
+   * Enter the information of the role you want to assume:
+   ![switch_role](./images/switch_role.png)  
+
+   * Notice that roles you switch into are remembered, allowing 1-click role switching in the future:
+   ![1_click](./images/1_click.png)  
 &nbsp;
 
 ##  Regional CDK Bootstrapping
@@ -76,7 +121,7 @@ Deploying AWS CDK apps into an AWS environment may require that you provision re
    cdk deploy CdkPipelineStack
    ```
 
-2. Navigate to CodePipeline in Console and cancel the intial build.
+2. Navigate to CodePipeline in Console and cancel the initial build.
 3. Set Env Vars in the Build step of the pipeline as below.
 
     ![edit_env](./images/edit_env.png)
@@ -106,7 +151,7 @@ In pipeline account, create a Policy for each target account to allow Pipeline r
 ### Run Pipeline
 Navigate to Pipeline and Release Changes, app resources will be deployed in three accounts and two regions in each account.
 
-Waves can be used to deploy multiple stages in parrallel. In this example:
+Waves can be used to deploy multiple stages in parallel. In this example:
 - DEV and QA
 - PRD and STG Primary 
 - PRD and STG Secondary 
