@@ -13,7 +13,7 @@
   "author": "awsmeetupgroup",
   "license": "ISC",
   "dependencies": {
-    "apollo-server": "^3.0.2",
+    "apollo-server": "^3.4.1",
     "apollo-server-lambda": "^3.0.2",
     "typeorm": "^0.2.36"
   },
