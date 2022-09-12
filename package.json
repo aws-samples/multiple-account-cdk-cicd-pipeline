@@ -28,7 +28,7 @@
     "@aws-cdk/aws-secretsmanager": "^1.115.0",
     "@aws-cdk/core": "^1.115.0",
     "@aws-cdk/pipelines": "^1.115.0",
-    "apollo-server": "^3.1.2",
+    "apollo-server": "^3.4.1",
     "apollo-server-lambda": "^3.1.2",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
