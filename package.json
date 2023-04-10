@@ -34,6 +34,6 @@
     "express": "^4.17.1",
     "graphql": "^15.5.1",
     "source-map-support": "^0.5.16",
-    "typeorm": "^0.2.29"
+    "typeorm": "^0.3.14"
   }
 }
