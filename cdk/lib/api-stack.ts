@@ -1,9 +1,10 @@
 require("dotenv").config();
-import { Stack, StackProps, Construct, CfnOutput } from "@aws-cdk/core";
-import { LambdaRestApi } from "@aws-cdk/aws-apigateway";
-import { Function, Runtime, Code } from "@aws-cdk/aws-lambda";
-import { Vpc, SecurityGroup, SubnetType } from "@aws-cdk/aws-ec2";
-import { Secret } from "@aws-cdk/aws-secretsmanager";
+import { Construct } from "constructs";
+import { Stack, StackProps, CfnOutput } from "aws-cdk-lib";
+import { LambdaRestApi } from "aws-cdk-lib/aws-apigateway";
+import { Function, Runtime, Code } from "aws-cdk-lib/aws-lambda";
+import { Vpc, SecurityGroup, SubnetType } from "aws-cdk-lib/aws-ec2";
+import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 
 
 export interface LambdaStackProps extends StackProps {
@@ -24,18 +25,18 @@ export class GraphqlApiStack extends Stack {
 
     const dbPwdSecret = Secret.fromSecretNameV2(this, "dbPwdSecret", props.rdsPasswordSecretName);
     const handler = new Function(this, "graphql", {
-      runtime: Runtime.NODEJS_14_X,
+      runtime: Runtime.NODEJS_18_X,
       code: Code.fromAsset("api"),
       handler: "build/src/graphql.handler",
       vpc: props.vpc,
       vpcSubnets: {
-        subnetType: SubnetType.ISOLATED,
+        subnetType: SubnetType.PRIVATE_ISOLATED,
       },
-      securityGroup: SecurityGroup.fromSecurityGroupId(
+      securityGroups: [SecurityGroup.fromSecurityGroupId(
         this,
         "inboundDbAccessSecurityGroup" + "rdsLambda",
         props.inboundDbAccessSecurityGroup
-      ),
+      )],
       environment: {
         TYPEORM_USERNAME: props.rdsDbUser,
         TYPEORM_HOST: props.rdsEndpoint,
