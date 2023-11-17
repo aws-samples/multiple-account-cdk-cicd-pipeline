@@ -63,14 +63,14 @@ export class CdkPipelineStack extends Stack {
       }
     ])
 
-    const githubOrg = process.env.GITHUB_ORG || "kevasync";
-    const githubRepo = process.env.GITHUB_REPO || "awsmug-serverless-graphql-api";
-    const githubBranch = process.env.GITHUB_BRANCH || "master";
+    const githubOrg = process.env.GITHUB_ORG || "your-github-org";
+    const githubRepo = process.env.GITHUB_REPO || "multiple-account-cdk-cicd-pipeline";
+    const githubBranch = process.env.GITHUB_BRANCH || "main";
     const devAccountId = process.env.DEV_ACCOUNT_ID || "undefined";
     const stgAccountId = process.env.STG_ACCOUNT_ID || "undefined";
     const prdAccountId = process.env.PRD_ACCOUNT_ID || "undefined";
-    const primaryRegion = process.env.PRIMARY_REGION || "undefined";
-    const secondaryRegion = process.env.SECONDARY_REGION || "undefined";
+    const primaryRegion = process.env.PRIMARY_REGION || "us-west-2";
+    const secondaryRegion = process.env.SECONDARY_REGION || "us-east-1";
 
     const pipeline = new CodePipeline(this, "Pipeline", {
       crossAccountKeys: true,
