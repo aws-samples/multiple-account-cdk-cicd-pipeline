@@ -1,9 +1,10 @@
-import { Construct, Stage, StageProps, Stack, StackProps, Aws } from "@aws-cdk/core";
-import { CodePipeline, CodePipelineSource, ManualApprovalStep, ShellStep, Wave } from "@aws-cdk/pipelines";
+import { Construct } from "constructs";
+import { Stage, StageProps, Stack, StackProps, Aws } from "aws-cdk-lib";
+import { CodePipeline, CodePipelineSource, ManualApprovalStep, ShellStep, Wave } from "aws-cdk-lib/pipelines";
 import { GraphqlApiStack } from "./api-stack";
 import { VpcStack } from "./vpc-stack";
 import { RDSStack } from "./rds-stack";
-import { IDatabaseInstance } from "@aws-cdk/aws-rds";
+import { IDatabaseInstance } from "aws-cdk-lib/aws-rds";
 
 
 export interface AppStageProps extends StageProps {
@@ -48,11 +49,11 @@ export class CdkPipelineStack extends Stack {
     const githubOrg = process.env.GITHUB_ORG || "kevasync";
     const githubRepo = process.env.GITHUB_REPO || "awsmug-serverless-graphql-api";
     const githubBranch = process.env.GITHUB_BRANCH || "master";
-    const devAccountId = process.env.DEV_ACCOUNT_ID || "";
-    const stgAccountId = process.env.STG_ACCOUNT_ID || "";
-    const prdAccountId = process.env.PRD_ACCOUNT_ID || "";
-    const primaryRegion = process.env.PRIMARY_REGION || "us-west-2";
-    const secondaryRegion = process.env.SECONDARY_REGION || "us-east-1";
+    const devAccountId = process.env.DEV_ACCOUNT_ID || "undefined";
+    const stgAccountId = process.env.STG_ACCOUNT_ID || "undefined";
+    const prdAccountId = process.env.PRD_ACCOUNT_ID || "undefined";
+    const primaryRegion = process.env.PRIMARY_REGION || "undefined";
+    const secondaryRegion = process.env.SECONDARY_REGION || "undefined";
 
     const pipeline = new CodePipeline(this, "Pipeline", {
       crossAccountKeys: true,

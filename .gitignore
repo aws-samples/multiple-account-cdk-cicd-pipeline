@@ -12,3 +12,5 @@ api/node_modules
 
 
 cdk.context.json
+.DS_Store
+__*

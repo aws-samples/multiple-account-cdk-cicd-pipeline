@@ -1,5 +1,6 @@
 require("dotenv").config();
-import { Construct, Stack, StackProps, CfnOutput } from "@aws-cdk/core";
+import { Construct } from "constructs";
+import { Stack, StackProps, CfnOutput } from "aws-cdk-lib";
 import {
   DatabaseInstance,
   DatabaseInstanceEngine,
@@ -7,9 +8,9 @@ import {
   StorageType,
   IDatabaseInstance,
   DatabaseInstanceReadReplica
-} from "@aws-cdk/aws-rds";
-import { ISecret, Secret } from "@aws-cdk/aws-secretsmanager";
-import { SecurityGroup, SubnetType, Vpc, InstanceType, InstanceClass, InstanceSize } from "@aws-cdk/aws-ec2";
+} from "aws-cdk-lib/aws-rds";
+import { ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager";
+import { SecurityGroup, SubnetType, Vpc, InstanceType, InstanceClass, InstanceSize } from "aws-cdk-lib/aws-ec2";
 
 export interface RDSStackProps extends StackProps {
   vpc: Vpc;
@@ -44,7 +45,7 @@ export class RDSStack extends Stack {
         sourceDatabaseInstance: props.primaryRdsInstance,
         vpc: props.vpc,
         securityGroups: [props.securityGroup],
-        vpcPlacement: { subnetType: SubnetType.ISOLATED },
+        vpcSubnets: { subnetType: SubnetType.PRIVATE_ISOLATED },
         multiAz: false,
         instanceType: rdsInstanceType,
         storageType: StorageType.GP2,
@@ -69,7 +70,7 @@ export class RDSStack extends Stack {
           instanceIdentifier: dbId,
           instanceType: rdsInstanceType,
           engine: DatabaseInstanceEngine.postgres({
-            version: PostgresEngineVersion.VER_10_17,
+            version: PostgresEngineVersion.VER_15_4,
           }),
           vpc: props.vpc,
           credentials: {
@@ -77,7 +78,7 @@ export class RDSStack extends Stack {
             password: rdsPasswordSecret.secretValue,
           },
           securityGroups: [props.securityGroup],
-          vpcPlacement: { subnetType: SubnetType.ISOLATED },
+          vpcSubnets: { subnetType: SubnetType.PRIVATE_ISOLATED },
           multiAz: false,
           allocatedStorage: 25,
           storageType: StorageType.GP2,
