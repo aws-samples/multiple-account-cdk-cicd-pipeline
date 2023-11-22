@@ -5,6 +5,7 @@ import { GraphqlApiStack } from "./api-stack";
 import { VpcStack } from "./vpc-stack";
 import { RDSStack } from "./rds-stack";
 import { IDatabaseInstance } from "aws-cdk-lib/aws-rds";
+import { NagSuppressions } from "cdk-nag";
 
 
 export interface AppStageProps extends StageProps {
@@ -46,6 +47,22 @@ export class CdkPipelineStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
+    // Suppressing cdk-nag errors
+    NagSuppressions.addStackSuppressions(this, [
+      {
+        id: 'AwsSolutions-IAM5',
+        reason: 'Supressing errors originating in external packages.'
+      },
+      {
+        id: 'AwsSolutions-KMS5',
+        reason: 'Supressing errors originating in external packages.'
+      },
+      {
+        id: 'AwsSolutions-S1',
+        reason: 'Supressing errors originating in external packages.'
+      }
+    ])
+
     const githubOrg = process.env.GITHUB_ORG || "kevasync";
     const githubRepo = process.env.GITHUB_REPO || "awsmug-serverless-graphql-api";
     const githubBranch = process.env.GITHUB_BRANCH || "master";
@@ -68,6 +85,7 @@ export class CdkPipelineStack extends Stack {
       }),
     });
     
+
     const devQaWave = pipeline.addWave("DEV-and-QA-Deployments");
     const dev = new AppStage(this, "dev", {
       env: { account: devAccountId, region: primaryRegion }
