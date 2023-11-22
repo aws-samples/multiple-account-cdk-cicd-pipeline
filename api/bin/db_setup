@@ -1,4 +1,0 @@
-psql -d postgres -h localhost << EOF
-CREATE USER awsmeetupgroup WITH PASSWORD 'Password1!' SUPERUSER;
-CREATE DATABASE awsmeetupgroup WITH OWNER = awsmeetupgroup;
-EOF

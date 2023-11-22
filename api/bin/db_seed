@@ -1,9 +1,0 @@
-psql -d awsmeetupgroup -h localhost << EOF
-    INSERT INTO "public"."posts" ("title", "text") VALUES ('New Post 1', 'Some Text');
-    INSERT INTO "public"."posts" ("title", "text") VALUES ('New Post 2', 'Some Text');
-    INSERT INTO "public"."posts" ("title", "text") VALUES ('New Post 3', 'Some Text');
-    INSERT INTO "public"."posts" ("title", "text") VALUES ('New Post 4', 'Some Text');
-    INSERT INTO "public"."posts" ("title", "text") VALUES ('New Post 5', 'Some Text');
-EOF
-
-
