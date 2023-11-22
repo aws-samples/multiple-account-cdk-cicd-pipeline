@@ -76,13 +76,17 @@ During the deployment, we will need to switch between four AWS accounts to check
    ![1_click](./images/1_click.png)  
 &nbsp;
 
+## Fork and update the code
+
+The easiest way to start trying out the capabilities of CDK Pipelines with this sample is to fork this repository and make changes in your own fork. After you have created your own fork, clone the repository to your development environment and open the stack file `cdk/lib/cdk-pipeline-stack.ts`. This file contains the pipeline stack definitions, including a set of constants that are needed to provision the full environment. Review and update the constants for GitHub organisation, repository, branch, the three deployment AWS accounts, and regions.
+
 ##  Regional CDK Bootstrapping
 
 Each account region combo that is deployed to must be bootstrapped. Since it is a cross-account deployment, a trust must be established during this process.
 
 Deploying AWS CDK apps into an AWS environment may require that you provision resources the AWS CDK needs to perform the deployment. These resources include an Amazon S3 bucket for storing files and IAM roles that grant permissions needed to perform deployments. The process of provisioning these initial resources is called bootstrapping. 
 
-1. For each target account/region run the following CLI command (Must be ran as user with appropriate privs in the target account):
+1. For each target account/region run the following CLI command. The command must run with appropriate priveleges in the target account:
     ```
     cdk bootstrap --trust <pipelineAccountId> --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess aws://<targetAccountId>/<targetRegion>
     ```
@@ -104,11 +108,11 @@ Deploying AWS CDK apps into an AWS environment may require that you provision re
 &nbsp;
 
 ### Github Access
-1. Create a github token [here](https://github.com/settings/tokens/). Set the permission as below
+1. Create a GitHub token [here](https://github.com/settings/tokens/) using an account with access to the forked repo. Set the permission as below
  
    ![github_repo](./images/github_repo.png)
 
-2. In pipeline account/region, create Secret Manager secret to store access token for GitHub repo.  The token must stored as a plaintext secret with a name of `github-token`:
+2. In the pipeline account/region, create a secret in [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) to store access token for GitHub repo.  The token must stored as a plaintext secret with a name of `github-token`:
    
    ![github_token](./images/github_token.png)
 
