@@ -78,7 +78,7 @@ During the deployment, we will need to switch between four AWS accounts to check
 
 ## Fork and update the code
 
-The easiest way to start trying out the capabilities of CDK Pipelines with this sample is to fork this repository and make changes in your own fork. After you have created your own fork, clone the repository to your development environment and open the stack file `cdk/lib/cdk-pipeline-stack.ts`. This file contains the pipeline stack definitions, including a set of constants that are needed to provision the full environment. Review and update the constants for GitHub organisation, repository, branch, the three deployment AWS accounts, and regions.
+The easiest way to start trying out the capabilities of CDK Pipelines with this sample is to fork this repository and make changes in your own fork. After you have created your own fork, clone the repository to your development environment and open the stack file `cdk/lib/cdk-pipeline-stack.ts`. This file contains the pipeline stack definitions, including a set of constants that are needed to provision the full environment. Review and update the constants for GitHub organization, repository, branch, the three deployment AWS accounts, and regions.
 
 ##  Regional CDK Bootstrapping
 
@@ -86,10 +86,11 @@ Each account region combo that is deployed to must be bootstrapped. Since it is 
 
 Deploying AWS CDK apps into an AWS environment may require that you provision resources the AWS CDK needs to perform the deployment. These resources include an Amazon S3 bucket for storing files and IAM roles that grant permissions needed to perform deployments. The process of provisioning these initial resources is called bootstrapping. 
 
-1. For each target account/region run the following CLI command. The command must run with appropriate priveleges in the target account:
+1. For each target account/region run the following CLI command. The command must run with appropriate privileges in the target account:
     ```
     cdk bootstrap --trust <pipelineAccountId> --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess aws://<targetAccountId>/<targetRegion>
     ```
+    **Note:** You will also need to run this in the secondary region in the pipeline account
 
 2. Given we are deploying to 2 regions in 3 different accounts, we must run this command 6 times
 
@@ -184,6 +185,10 @@ This allows each to be updated separately.
 You will need to go CloudFormation in each account/region and delete the stacks when you want to clean up the resources.
 
 Explore nested stacks if this behavior is not acceptable
+
+## Troubleshooting
+Message `Policy contains a statement with one or more invalid principals`: Ensure environment variables are set. _Note:_ You must set them in the CodeBuild project after each deployment of the pipeline (You shouldn't deploy it often, it self-mutates :)).
+
 
 ## Security
 
