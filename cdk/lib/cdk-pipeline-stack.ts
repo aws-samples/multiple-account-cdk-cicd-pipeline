@@ -60,7 +60,6 @@ export class CdkPipelineStack extends Stack {
       }),
     });
     
-
     const devQaWave = pipeline.addWave("DEV-and-QA-Deployments");
     const dev = new AppStage(this, "dev", {
       env: { account: devAccountId, region: primaryRegion }
@@ -70,19 +69,20 @@ export class CdkPipelineStack extends Stack {
       env: { account: devAccountId, region: secondaryRegion }
     });
     
+    const stg = new AppStage(this, "stg", {
+      env: { account: stgAccountId, region: primaryRegion }
+    });
+    
     devQaWave.addStage(dev);
     devQaWave.addStage(qa);
+    devQaWave.addStage(stg);
 
-    const primaryRdsRegionWave = pipeline.addWave("ST-and-PROD-Deployments", {
+    const primaryRdsRegionWave = pipeline.addWave("PROD-Deployment", {
       pre: [new ManualApprovalStep("ProdManualApproval")]
-    });
-    const stgPrimary = new AppStage(this, "stg-primary", {
-      env: { account: stgAccountId, region: primaryRegion }
     });
     const prdPrimary = new AppStage(this, "prd-primary", {
       env: { account: prdAccountId, region: primaryRegion }
     });
-    primaryRdsRegionWave.addStage(stgPrimary);
     primaryRdsRegionWave.addStage(prdPrimary);
   }
 }

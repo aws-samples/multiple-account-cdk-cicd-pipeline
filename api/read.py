@@ -2,7 +2,7 @@ import json
 import boto3
 import os
 
-def handler(event, context):
+def handler(event, context=None):
     print('request: {}'.format(json.dumps(event)))
     client = boto3.client('dynamodb')
     table = os.getenv('DDB_TABLE_NAME', 'undefined')
